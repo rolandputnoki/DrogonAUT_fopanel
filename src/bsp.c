@@ -29,7 +29,7 @@ void init_all(){
 
 	//Gyári motor indítás
 	InitAF_gyari_motor();
-	Init_gyari_motor_PWM();
+//	Init_gyari_motor_PWM();
 
 	//Motor input capture
 	set_gy_rv_af_motor();
@@ -45,6 +45,12 @@ void init_all(){
 	/* AutoReconnect engedélyezve van, így rögtön csatlakozik */
 	BT_init_pins();
 	BT_UART_Init();
+
+	//Sharp szenzorok méréséhez az ADC csatornák inicializációja
+//	ADC_Init();
+//	DMA_Init();
+	//
+	init_pin_to_analyser();
 
 	//A mérés ciklusidejét határozza meg
 	init_cuklus_timer();
@@ -137,6 +143,9 @@ void init_LED2(void)
 
 void init_pin_to_analyser(){
 	__GPIOA_CLK_ENABLE();
+	__GPIOC_CLK_ENABLE();
+
+
 	GPIO_InitTypeDef GPIO_InitStructure;
 	// Configure pin in output push/pull mode
 	GPIO_InitStructure.Pin = GPIO_PIN_12;
@@ -145,6 +154,15 @@ void init_pin_to_analyser(){
 	GPIO_InitStructure.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+
+
+	GPIO_InitStructure.Pin = GPIO_PIN_12;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_RESET);
+
 }
 
 void init_user_button(void)

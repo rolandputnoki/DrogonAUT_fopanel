@@ -3,11 +3,13 @@
 #include "motor_pwm.h"
 #include "uart_communication.h"
 #include "bsp.h"
-
+#include "adc.h"
+#include "dma.h"
 
 //SPI1
 SPI_HandleTypeDef spi;
 
+uint32_t adc_eredmeny = 0;
 
 //SPI fogadási flag
 uint8_t data_received = 1;
@@ -45,32 +47,45 @@ uint8_t vonalak = 0;
 
 //QT-s házi: robot állapot
 struct RobotState rs;
+uint16_t sharp1;
 
+uint32_t valami;
+uint32_t * sharp2 = &valami;
 
 int main(){
 
-	motor_value = GYARI_MOTOR_COUNTER_KOZEP;
+
 	// HAL_Init, System_Clock_config és hardware inicializáció
 	init_all();
 
 
-	rs.r_state = 1;
-	uint8_t l = 0;
-	while(l < 32){
-		rs.sensor_values[l] = 15+100*l;
-		l++;
-	}
-	int32_t x,y,z;
-	if(!LMS6DS3_Read_Axes(&x,&y,&z)){
-		rs.acel_axes_values[0] = x;
-		rs.acel_axes_values[1] = y;
-		rs.acel_axes_values[2] = z;
-	}
-
+	/*
 	while(1){
 		if(new_cycle){
+//			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
 			ciklus();
+			BT_UART_SendString("Hello_Hello_Hello_Hello_Hello_Hello_Hello_Hello_12");
 		}
+	}
+
+	*/
+
+//	Init_gyari_motor_PWM();
+
+	ADC_Init();
+	ConfigureDMA();
+
+
+//	HAL_ADC_Start_IT(&g_AdcHandle);
+	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
+	for(;;)
+	{
+
+
+
+		HAL_Delay(10);
+
+		uint8_t macska = 0;
 	}
 }
 
@@ -306,6 +321,8 @@ void ciklus(){
 		set_gyari_motor_compare_value(motor_value);
 
 
+
+/*
 			send_adc_values_over_bt(adcAdatok_buffer);
 			send_adc_values_over_bt(adcAdatok);
 			p_konv = (int32_t)(10000*p);
@@ -314,10 +331,7 @@ void ciklus(){
 			sprintf(parameter_buffer, "Szervo:%u Motor: %u Állapot: %u P:%d P_prev:%d D:%d KP_s:%u KD_s:%u KP_f:%u KD_f:%u Flag:%u\r\n", szervo_value, motor_value, state, p_konv, p_prev_konv, D_konv, KP_slow, KD_slow, KP_fast, KD_fast, cycle_counter_motor);
 			BT_UART_SendString(parameter_buffer);
 
-			rs.szervo_value = szervo_value;
-		//	BT_UART_Send_RobotState(rs);
-
-
+			*/
 
 	}
 
@@ -344,4 +358,13 @@ uint8_t vonalak_szama(){
 	}
 	return cnt;
 }
+
+void send_adc_values_over_bt(void){
+	uint8_t i = 0;
+	for(i = 0; i<32; i++){
+		BT_UART_Send_adc_value(adcAdatok_buffer[i]);
+	}
+	BT_UART_SendString("\r\n");
+}
+
 

@@ -36,10 +36,10 @@ endif
 all: DrogonAUT_fo_panel.elf
 
 # Tool invocations
-DrogonAUT_fo_panel.elf: $(OBJS) $(USER_OBJS) C:\Users\Roland\Documents\Egyetemi\ projektek\RobonAUT\Openstm_projektek\fopanel\DrogonAUT_fo_panel\LinkerScript.ld
+DrogonAUT_fo_panel.elf: $(OBJS) $(USER_OBJS) C:\Users\Roland\Documents\Egyetemi\ projektek\RobonAUT\Openstm_projektek\DrogonAUT_fopanel\LinkerScript.ld
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU GCC Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T"C:\Users\Roland\Documents\Egyetemi projektek\RobonAUT\Openstm_projektek\fopanel\DrogonAUT_fo_panel\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "DrogonAUT_fo_panel.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T"C:\Users\Roland\Documents\Egyetemi projektek\RobonAUT\Openstm_projektek\DrogonAUT_fopanel\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "DrogonAUT_fo_panel.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build

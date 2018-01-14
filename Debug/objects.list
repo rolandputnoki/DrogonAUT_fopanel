@@ -101,6 +101,8 @@
 "src/bsp.o"
 "src/bsp_i2c.o"
 "src/bsp_spi.o"
+"src/dma.o"
+"src/encoder.o"
 "src/gyari_radio_vevo_jel_meres.o"
 "src/lsm6ds3.o"
 "src/main.o"

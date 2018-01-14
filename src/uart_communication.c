@@ -34,7 +34,7 @@ uint16_t gyorsulas_max = 6640;
 uint16_t lassulas_min = 6540;
 uint8_t state = 0;
 
-uint16_t motor_value;
+uint16_t motor_value = 6500;
 
 //int8_t sorszam[32] = {-18,-17,-16,-15,-14,-13,-12,-8,-7,-6,-5,-4,-3,-2,-1,0,0,1,2,3,4,5,6,7,8,12,13,14,15,16,17,18};		//szenzorsorszámok a súlyozáshoz
 int8_t sorszam[32] = {-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};		//szenzorsorszámok a súlyozáshoz
@@ -154,11 +154,18 @@ void HAL_UART_MspInit(UART_HandleTypeDef* handle)
 /** String kÃ¼ldÃ©se, nem blokkolva. */
 HAL_StatusTypeDef BT_UART_SendString(const char *str)
 {
+
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_12);
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
 	while(bt_huart.gState !=HAL_UART_STATE_READY && bt_huart.gState != HAL_UART_STATE_BUSY_RX)
 	{
 
 	}
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
+
 	strncpy(txBuffer, str, TXBUFFERSIZE);
+//	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
+
 
 	HAL_UART_Transmit_IT(&bt_huart, (uint8_t*) txBuffer, strlen(txBuffer));
 
@@ -178,86 +185,39 @@ HAL_StatusTypeDef BT_UART_Send_Bytes(const char * str){
 	HAL_UART_Transmit_IT(&bt_huart, (uint8_t*) txBuffer, 10);
 
 	return HAL_OK;
-
 }
 
 
-HAL_StatusTypeDef BT_UART_Send_RobotState(struct RobotState rs){
-	HAL_StatusTypeDef statusa;
-	while(bt_huart.gState !=HAL_UART_STATE_READY && bt_huart.gState != HAL_UART_STATE_BUSY_RX)
-	{
+HAL_StatusTypeDef BT_UART_Send_adc_value(uint16_t value){
+	uint8_t i = 0;
+	if(value < 1000){
+		char digits[5];
+		do
+		{
+			digits[2-i] = (char)(value % 10) + '0';
+			i++;
+			value /= 10;
+		} while(value);
 
+		digits[3] = ' ';
+		digits[4] = 0;
+		BT_UART_SendString(digits);
 	}
-	txBuffer[0] = 0;
-	txBuffer[1] = 0;
-	txBuffer[2] = 0;
-	txBuffer[3] = ROBOT_STATE_SIZE;
-	uint8_t adc_ind = 0;
-	while(adc_ind < 32){
-		txBuffer[5 + adc_ind*2] = rs.sensor_values[adc_ind] & 0x00FF;
-		txBuffer[4 + adc_ind*2] = (rs.sensor_values[adc_ind] & 0xFF00) >> 8;
-		adc_ind++;
+	else {
+		char digits[6];
+		do
+		{
+			digits[3-i] = (char)(value % 10) + '0';
+			i++;
+			value /= 10;
+		} while(value);
+
+		digits[4] = ' ';
+		digits[5] = 0;
+		BT_UART_SendString(digits);
 	}
-	txBuffer[68] = rs.r_state;
-	txBuffer[69] = (rs.szervo_value & 0xFF00) >> 8;
-	txBuffer[70] = rs.szervo_value & 0x00FF;
-	txBuffer[71] = (rs.acel_axes_values[0] & 0xFF000000) >> 24;
-	txBuffer[72] = (rs.acel_axes_values[0] & 0x00FF0000) >> 16;
-	txBuffer[73] = (rs.acel_axes_values[0] & 0xFF00FF00) >> 8;
-	txBuffer[74] = (rs.acel_axes_values[0] & 0xFF0000FF);
-	txBuffer[75] = (rs.acel_axes_values[1] & 0xFF000000) >> 24;
-	txBuffer[76] = (rs.acel_axes_values[1] & 0x00FF0000) >> 16;
-	txBuffer[77] = (rs.acel_axes_values[1] & 0xFF00FF00) >> 8;
-	txBuffer[78] = (rs.acel_axes_values[1] & 0xFF0000FF);
-	txBuffer[79] = (rs.acel_axes_values[2] & 0xFF000000) >> 24;
-	txBuffer[80] = (rs.acel_axes_values[2] & 0x00FF0000) >> 16;
-	txBuffer[81] = (rs.acel_axes_values[2] & 0xFF00FF00) >> 8;
-	txBuffer[82] = (rs.acel_axes_values[2] & 0xFF0000FF);
-
-
-	statusa = HAL_UART_Transmit_IT(&bt_huart, (uint8_t*) txBuffer, ROBOT_STATE_SIZE + 4);
-
-	return HAL_OK;
-
 }
 
-HAL_StatusTypeDef BT_UART_Send_uint8_to_Qt(uint8_t value){
-	while(bt_huart.gState !=HAL_UART_STATE_READY && bt_huart.gState != HAL_UART_STATE_BUSY_RX)
-	{
-
-	}
-	txBuffer[0] = 0;
-	txBuffer[1] = 0;
-	txBuffer[2] = 0;
-	txBuffer[3] = 1 + 4;
-	txBuffer[4] = value;
-	HAL_UART_Transmit_IT(&bt_huart, (uint8_t*) txBuffer, 5);
-
-	return HAL_OK;
-}
-
-HAL_StatusTypeDef BT_UART_Send_to_qt(const char * str) {
-	while(bt_huart.gState !=HAL_UART_STATE_READY && bt_huart.gState != HAL_UART_STATE_BUSY_RX)
-	{
-
-	}
-	uint8_t length = strlen(str);
-	txBuffer[0] = 0;
-	txBuffer[1] = 0;
-	txBuffer[2] = 0;
-	txBuffer[3] = length + 4;
-/*
-	txBuffer[4] = 0;
-	txBuffer[5] = 0;
-	txBuffer[6] = 0;
-	txBuffer[7] = length - 8;
-	*/
-	strncpy(txBuffer + 4, str, TXBUFFERSIZE);
-
-	HAL_UART_Transmit_IT(&bt_huart, (uint8_t*) txBuffer, length+4);
-
-	return HAL_OK;
-}
 
 uint8_t size = 0;
 uint8_t comma_received = 0;
@@ -362,9 +322,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 						}
 					}
 					else if(space_counter == 2){
-						//set_gyari_motor_compare_value(GYARI_MOTOR_COUNTER_KOZEP);
-						//stop = 1;
-						max_motor_value -=20;
+						sscanf(command_buffer, "%u", &motor_value);
+						BT_UART_Send_adc_value(motor_value);
 					} else if(space_counter == 3){
 //						sscanf(command_buffer, "%u %u %u %u", &KP_fast, &KD_fast, &KP_slow, &);
 					} else if(space_counter == 4){
@@ -424,44 +383,7 @@ void USART6_IRQHandler(void)
 }
 
 
-void send_adc_values_over_bt(uint16_t *adc_values){
-	char tomb[200];
-	sprintf(tomb,"%u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\r\n",
-			adc_values[0],
-			adc_values[1],
-			adc_values[2],
-			adc_values[3],
-			adc_values[4],
-			adc_values[5],
-			adc_values[6],
-			adc_values[7],
-			adc_values[8],
-			adc_values[9],
-			adc_values[10],
-			adc_values[11],
-			adc_values[12],
-			adc_values[13],
-			adc_values[14],
-			adc_values[15],
-			adc_values[16],
-			adc_values[17],
-			adc_values[18],
-			adc_values[19],
-			adc_values[20],
-			adc_values[21],
-			adc_values[22],
-			adc_values[23],
-			adc_values[24],
-			adc_values[25],
-			adc_values[26],
-			adc_values[27],
-			adc_values[28],
-			adc_values[29],
-			adc_values[30],
-			adc_values[31]
-			);
-	BT_UART_SendString(tomb);
-}
+
 
 
 

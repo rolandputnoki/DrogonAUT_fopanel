@@ -66,6 +66,12 @@
   *         level initialization (GPIOs, clock, DMA, interrupt).
   * @retval None
   */
+
+
+
+
+
+
 void HAL_MspInit(void)
 {
 
@@ -81,6 +87,7 @@ void HAL_MspDeInit(void)
 {
 
 }
+
 
 /**
   * @brief  Initializes the PPP MSP.
