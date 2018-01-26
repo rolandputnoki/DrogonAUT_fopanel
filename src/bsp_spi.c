@@ -38,7 +38,14 @@ void SPI1_init(){
 		GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+		GPIO_InitTypeDef GPIO_InitStruct_kettes_spi;
+		GPIO_InitStruct_kettes_spi.Pin = GPIO_PIN_8;
+		GPIO_InitStruct_kettes_spi.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct_kettes_spi.Pull = GPIO_NOPULL;
+		GPIO_InitStruct_kettes_spi.Speed = GPIO_SPEED_FAST;
+		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct_kettes_spi);
 
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
 
 	//		HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_1);
 		HAL_NVIC_SetPriority(SPI1_IRQn, 0,0);
@@ -56,7 +63,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *handle){
 		data_received = 1;
 
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
 	}
 }
 
@@ -64,5 +71,6 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *handle){
 void HAL_SPI_TxCpltCallback (SPI_HandleTypeDef * hspi){
 	if(hspi->Instance == SPI1){
 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
 	}
 }

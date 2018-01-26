@@ -36,7 +36,10 @@ uint16_t szervo_value = DIGIT_SZ_KOZEP;
 
 //
 uint16_t adcAdatok[32];
+uint16_t adcAdatok_2[32];
 uint16_t adcAdatok_buffer[32];
+
+uint16_t adcAdatok_buffer_2[32];
 int32_t adcAdatok_sulyozott[32];
 
 
@@ -51,27 +54,75 @@ uint16_t sharp1;
 
 uint32_t valami;
 uint32_t * sharp2 = &valami;
-
+uint16_t mag_dec = 0;
+uint32_t encoder_value = 0;
 int main(){
+
 
 
 	// HAL_Init, System_Clock_config és hardware inicializáció
 	init_all();
 
 
+
+
+	char buffer[10];
+
+
+
+
+
+//	HAL_Delay(5000);
+
+	while(1)
+	{
+//		set_gyari_motor_compare_value(motor_value);
+		mag_dec = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
+
+		HAL_Delay(50);
+
+//		motor_value = 6500;
+
+		encoder_value = get_encoder_counter();
+
+//		itoa(capture_ertek, buffer, 10);
+		BT_UART_SendString("Mag_dec:  ");
+		itoa(mag_dec, buffer, 10);
+		BT_UART_SendString(buffer);
+		BT_UART_SendString("\r\n");
+
+		itoa(encoder_value, buffer, 10);
+		BT_UART_SendString(buffer);
+		BT_UART_SendString("\r\n");
+
+
+	}
+
+
+
+
+
 	/*
+	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
+
+
+
 	while(1){
 		if(new_cycle){
-//			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
 			ciklus();
-			BT_UART_SendString("Hello_Hello_Hello_Hello_Hello_Hello_Hello_Hello_12");
+			encoder_value = get_encoder_counter();
+			send_encoder_values_over_uart();
+//			BT_UART_SendString("Hello_Hello_Hello_Hello_Hello_Hello_Hello_Hello_12");
 		}
 	}
 
-	*/
+*/
 
 //	Init_gyari_motor_PWM();
 
+
+	/*
 	ADC_Init();
 	ConfigureDMA();
 
@@ -87,7 +138,14 @@ int main(){
 
 		uint8_t macska = 0;
 	}
+
+
+	*/
 }
+
+
+
+
 
 char parameter_buffer[50];
 int32_t p_konv;
@@ -134,6 +192,8 @@ uint8_t eppen_indulunk = 1;
 uint16_t harom_vonalas_szamlalo = 0;
 uint8_t kanyar_parameterek = 1;
 
+char bt_adc_value[10];
+
 void ciklus(){
 	uint32_t szumma_adc_values = 0;
 	int32_t szumma_sulyozott = 0;
@@ -144,6 +204,12 @@ void ciklus(){
 	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer, 64);
 	while(!data_received);
 
+
+	data_received = 0;
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
+	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer_2, 64);
+	while(!data_received);
+
 	// Adatfogadás vége
 
 	if(first_cycle){
@@ -151,7 +217,6 @@ void ciklus(){
 	} else {
 
 		for(uint8_t n = 0; n<32; n++){
-			rs.sensor_values[n] = adcAdatok_buffer[n];
 			// Csak a világító ledekhez tartozó AD adatokat tartjuk meg
 			if(adcAdatok_buffer[n] <= 2000){
 
@@ -159,64 +224,24 @@ void ciklus(){
 			} else {
 				adcAdatok[n] = adcAdatok_buffer[n];
 			}
+
+			if(adcAdatok_buffer_2[n] <= 2000){
+
+				adcAdatok_2[n] = 0;
+			} else {
+				adcAdatok_2[n] = adcAdatok_buffer_2[n];
+			}
 		}
 
-		if(vonalak_szama() == 3){
-			harom_vonal_cnt++;
-		}
-		measure_cnt++;
 
-		if(measure_cnt >= ONE_CYCLE_MEASERES){
-
-			if(harom_vonal_cnt >= ONE_CYCLE_MEASERES ){
-				harom_vonalas_szamlalo++;
-			}
-			//Lassítást jelzõ szakaszon vagyunk
-			if(harom_vonal_cnt >= ONE_CYCLE_MEASERES && just_measured_three_full_lines == 0 ){
-				just_measured_three_full_lines = 1;
-				state = 2;
-				accelerate = 0;
-			}
-
-			//Lassítást jelzõ szakaszon voltunk, és azt várjuk, hogy elhagyjuk teljesen
-			if(just_measured_three_full_lines){
-				if(harom_vonal_cnt <= 0){
-					just_measured_three_full_lines = 0;
-				}
-			}
-
-			//Gyorsítást jelzõ szakaszon vagyunk
-			if(harom_vonal_cnt > 0 && harom_vonal_cnt <  ONE_CYCLE_MEASERES  && just_measured_three_dashed_lines == 0){
-				just_measured_three_dashed_lines = 1;
-				state = 1;
-				kanyar_parameterek = 0;
-				accelerate = 1;
-			}
-
-			//Gyorsítást jelzõ szakaszon voltunk, és azt várjuk, hogy elhagyjuk
-			if(just_measured_three_dashed_lines){
-				if(harom_vonal_cnt <= 0){
-					just_measured_three_dashed_lines = 0;
-				}
-			}
-
-
-			if(harom_vonalas_szamlalo >= 4){
-				kanyar_parameterek = 1;
-				harom_vonalas_szamlalo = 0;
-			}
-
-			harom_vonal_cnt = 0;
-			measure_cnt = 0;
-		}
-
-		//
-		for(int i = 0; i < 32; i++)				//arányos tényezõ számítása
+		//arányos tényezõ számítása
+		for(int i = 0; i < 32; i++)
 		{
-			szumma_adc_values += adcAdatok[i];
-			adcAdatok_sulyozott[i] = adcAdatok[i] * sorszam[i];			//súlyozás
+			szumma_adc_values += adcAdatok_2[i];
+			adcAdatok_sulyozott[i] = adcAdatok_2[i] * sorszam[i];			//súlyozás
 			szumma_sulyozott += adcAdatok_sulyozott[i];
 		}
+
 		//Pozíció
 		if(szumma_adc_values != 0){
 			p = (float)szumma_sulyozott/szumma_adc_values;
@@ -240,19 +265,8 @@ void ciklus(){
 			}
 		}
 
-/*
-		if(state == 2 || state == 0){
-			pd_value = KP_slow*p + KD_slow*D;
-		}
-		else if(state == 1){
-			pd_value = KP_fast*p + KD_fast*D;
-		}
-*/
-		if(kanyar_parameterek){
-			pd_value = KP_slow*p + KD_slow*D;
-		} else {
-			pd_value = KP_fast*p + KD_fast*D;
-		}
+
+		pd_value = KP_slow*p + KD_slow*D;
 
 		prev_pos = p;
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
@@ -262,78 +276,8 @@ void ciklus(){
 
 		new_cycle = 0;
 
-
-
-		cycle_counter_motor++;
-
-		if(eppen_indulunk){
-			//Motor feszültség változtatása, hogy ne legyen túl gyors
-			if(cycle_counter_motor >= 50){
-
-				//Indulás
-				if(state == 0){
-					if(motor_value < indulas_max){
-						motor_value += 50;
-						if(motor_value >= indulas_max){
-							motor_value = lassulas_min;
-							eppen_indulunk = 0;
-						}
-					} else {
-						motor_value = lassulas_min;
-						eppen_indulunk = 0;
-					}
-				}
-				cycle_counter_motor = 0;
-			}
-		} else {
-
-			if(cycle_counter_motor >= 20){
-
-				//Gyorsítás
-				if(state == 1){
-					if(motor_value <= gyorsulas_max){
-						motor_value += 50;
-						if(dummy_flag == 0){
-							dummy_flag = 1;
-						} else {
-							dummy_flag = 0;
-						}
-					}
-					if(motor_value > gyorsulas_max){
-						motor_value = gyorsulas_max;
-					}
-				}
-				//Lassítás
-				else if(state == 2){
-					if(motor_value > lassulas_min){
-						motor_value = 6400;
-					} else {
-						motor_value = lassulas_min;
-					}
-				}
-				cycle_counter_motor = 0;
-			}
-
-
-
-		}
-
-		set_gyari_motor_compare_value(motor_value);
-
-
-
-/*
-			send_adc_values_over_bt(adcAdatok_buffer);
-			send_adc_values_over_bt(adcAdatok);
-			p_konv = (int32_t)(10000*p);
-			D_konv = (int32_t)(10000*D);
-			p_prev_konv = (int32_t)(10000*prev_pos);
-			sprintf(parameter_buffer, "Szervo:%u Motor: %u Állapot: %u P:%d P_prev:%d D:%d KP_s:%u KD_s:%u KP_f:%u KD_f:%u Flag:%u\r\n", szervo_value, motor_value, state, p_konv, p_prev_konv, D_konv, KP_slow, KD_slow, KP_fast, KD_fast, cycle_counter_motor);
-			BT_UART_SendString(parameter_buffer);
-
-			*/
-
 	}
+
 
 }
 
@@ -345,12 +289,12 @@ uint8_t vonalak_szama(){
 	uint8_t m;
 	for(m = 0; m < 32; m++){
 		if(!csucs_kezdete){
-			if(adcAdatok[m] != 0){
+			if(adcAdatok_2[m] != 0){
 				csucs_kezdete = 1;
 
 			}
 		} else {
-			if(adcAdatok[m] == 0){
+			if(adcAdatok_2[m] == 0){
 				csucs_kezdete = 0;
 				cnt++;
 			}
@@ -359,12 +303,51 @@ uint8_t vonalak_szama(){
 	return cnt;
 }
 
+
 void send_adc_values_over_bt(void){
 	uint8_t i = 0;
+	char buff[5];
+
+	BT_UART_SendString("Hatso_szenzor:\r\n");
 	for(i = 0; i<32; i++){
-		BT_UART_Send_adc_value(adcAdatok_buffer[i]);
+		buff[0] = 0;
+		buff[1] = 0;
+		buff[2] = 0;
+		buff[3] = 0;
+		buff[4] = 0;
+		itoa(adcAdatok_buffer[i], buff, 10);
+		BT_UART_SendString(buff);
+		BT_UART_SendString(" ");
 	}
 	BT_UART_SendString("\r\n");
+	BT_UART_SendString("Elso_szenzor:\r\n");
+	for(i = 0; i<32; i++){
+		buff[0] = 0;
+		buff[1] = 0;
+		buff[2] = 0;
+		buff[3] = 0;
+		buff[4] = 0;
+		itoa(adcAdatok_buffer_2[i], buff, 10);
+		BT_UART_SendString(buff);
+		BT_UART_SendString(" ");
+	}
+	BT_UART_SendString("\r\n");
+}
+
+
+void send_encoder_values_over_uart(){
+	char buff[20];
+	itoa(encoder_value, buff, 10);
+	BT_UART_SendString(buff);
+	BT_UART_SendString("\r\n");
+
+
+/*
+	itoa(ic2, buff, 10);
+	BT_UART_SendString(buff);
+	BT_UART_SendString("\r\n");
+
+	*/
 }
 
 

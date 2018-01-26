@@ -9,6 +9,7 @@
 #include "bsp.h"
 
 
+
 volatile int sys_delay = 0;
 uint8_t new_cycle = 0;
 
@@ -29,7 +30,7 @@ void init_all(){
 
 	//Gyári motor indítás
 	InitAF_gyari_motor();
-//	Init_gyari_motor_PWM();
+	Init_gyari_motor_PWM();
 
 	//Motor input capture
 	set_gy_rv_af_motor();
@@ -47,13 +48,23 @@ void init_all(){
 	BT_UART_Init();
 
 	//Sharp szenzorok méréséhez az ADC csatornák inicializációja
-//	ADC_Init();
-//	DMA_Init();
+	ADC_Init();
+	ConfigureDMA();
 	//
 	init_pin_to_analyser();
 
 	//A mérés ciklusidejét határozza meg
 	init_cuklus_timer();
+
+
+	//Enkóder
+	init_mag_inc_dec_pin();
+	encoder_init();
+
+
+	//Infra vevõ
+	init_infra_rev_pin();
+//	init_infra_timer();
 }
 
 void init_cuklus_timer(void)
@@ -210,4 +221,14 @@ void SystemClock_Config(void) {
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
+}
+
+void init_mag_inc_dec_pin(){
+	__GPIOB_CLK_ENABLE();
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin = GPIO_PIN_9;
+	GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	GPIO_InitStructure.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
 }

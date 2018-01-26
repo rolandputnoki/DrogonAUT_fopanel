@@ -40,7 +40,7 @@ void ADC1_Init()
     hadc1.Instance = ADC1;
 
     hadc1.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV4;
-    hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+    hadc1.Init.Resolution = ADC_RESOLUTION_8B;
     hadc1.Init.ScanConvMode = DISABLE;
     hadc1.Init.ContinuousConvMode = ENABLE;
     hadc1.Init.DiscontinuousConvMode = DISABLE;
@@ -118,7 +118,7 @@ void ADC3_Init(void)
 
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV4;
-  hadc3.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc3.Init.Resolution = ADC_RESOLUTION_10B;
   hadc3.Init.ScanConvMode = DISABLE;
   hadc3.Init.ContinuousConvMode = ENABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;

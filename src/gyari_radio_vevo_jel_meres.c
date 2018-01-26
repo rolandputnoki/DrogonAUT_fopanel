@@ -9,6 +9,14 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_cortex.h"
 
+#include "uart_communication.h"
+#include "infra_receiver.h"
+#include "rc5.h"
+
+uint16_t ic_tomb[500];
+
+extern uint16_t capture_ertek = 0;
+
 //PA11-re kötjük a RC vevő motor csatornáját
 void set_gy_rv_af_motor(){
 	GPIO_InitTypeDef  GPIO_InitStructure;
@@ -105,6 +113,23 @@ void Init_input_capture_szervo()
 uint8_t rising_edge = 1;
 uint16_t cmp1, cmp2, cmp;
 
+uint16_t ic_count = 0;
+
+
+
+//RC5 protokollhoz
+
+RC5STATE protocol_state;
+RC5STATE new_protocol_state;
+uint8_t first_rising_edge = 1;
+uint8_t cur_is_rising_edge = 0;
+uint16_t prev_edge_cnt, cur_edge_cnt;
+uint16_t pulse_lenght;
+RC5EVENT cur_event;
+uint8_t rc5_message[14];
+uint8_t msg_pos_counter = 1;
+uint8_t rc5_transfer_finished = 0;
+
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 
@@ -113,14 +138,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4 )
 		{
-			cmp = htim->Instance->CCR4;
 
-			// Gyári szervo pwm-jére kötjük
-//			Tim4Handle.Instance->CCR1 = cmp;
 
-			// Gyári motor pwm-jére kötjük
-//			set_gyari_motor_compare_value(cmp);
 			if(rising_edge){
+				cmp1 = htim->Instance->CCR4;
 				rising_edge = 0;
 				TIM_ICInitStructure.ICPolarity = TIM_ICPOLARITY_FALLING;
 				__HAL_TIM_SetCounter(&Tim1Handle, 0);
@@ -132,6 +153,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				TIM_ICInitStructure.ICPolarity = TIM_ICPOLARITY_RISING;
 				HAL_TIM_IC_ConfigChannel(&Tim1Handle, &TIM_ICInitStructure, TIM_CHANNEL_4);
 				HAL_TIM_IC_Start_IT(&Tim1Handle, TIM_CHANNEL_4);
+				cmp2 = htim->Instance->CCR4;
+				capture_ertek = cmp2 - cmp1;
+
+				if(capture_ertek < 6000){
+					motor_value = 6200;
+				} else {
+					motor_value = capture_ertek;
+				}
 			}
 		}
 	} else if(htim->Instance == TIM12)
@@ -153,6 +182,78 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 				HAL_TIM_IC_ConfigChannel(&Tim12Handle, &TIM_ICInitStructure, TIM_CHANNEL_2);
 				HAL_TIM_IC_Start_IT(&Tim12Handle, TIM_CHANNEL_2);
 			}
+		}
+	}
+	
+	else if(htim->Instance == TIM3)
+	{
+		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 )
+		{
+
+			if(cur_is_rising_edge){
+				cur_is_rising_edge = 0;
+			} else {
+				cur_is_rising_edge = 1;
+			}
+
+
+			if(first_rising_edge){
+				prev_edge_cnt = htim->Instance->CCR1;
+				protocol_state = RC5STATE_MID1;
+				first_rising_edge = 0;
+
+				rc5_message[0] = 1;
+			} else {
+				cur_edge_cnt = htim->Instance->CCR1;
+
+
+				if(cur_edge_cnt > prev_edge_cnt){
+					pulse_lenght = cur_edge_cnt - prev_edge_cnt;
+				}
+				//T�lcsordul�s kezel�se
+				else {
+					pulse_lenght = cur_edge_cnt + 65535 - prev_edge_cnt;
+				}
+
+				if(cur_is_rising_edge){
+					if(pulse_lenght > SHORT_MIN && pulse_lenght < SHORT_MAX){
+						cur_event = RC5EVENT_SHORTSPACE;
+					} else if(pulse_lenght > LONG_MIN && pulse_lenght < LONG_MAX){
+						cur_event = RC5EVENT_LONGSPACE;
+					}
+				} else {
+					if(pulse_lenght > SHORT_MIN && pulse_lenght < SHORT_MAX){
+						cur_event = RC5EVENT_SHORTPULSE;
+					} else if(pulse_lenght > LONG_MIN && pulse_lenght < LONG_MAX){
+						cur_event = RC5EVENT_LONGPULSE;
+					}
+				}
+
+
+				new_protocol_state = trans[protocol_state]>>cur_event & 0x03;
+
+				if(new_protocol_state == protocol_state){
+
+				} else {
+					if(new_protocol_state == RC5STATE_MID0){
+						rc5_message[msg_pos_counter] = 0;
+						msg_pos_counter++;
+					} else if(new_protocol_state == RC5STATE_MID1){
+						rc5_message[msg_pos_counter] = 1;
+						msg_pos_counter++;
+					}
+				}
+
+				protocol_state = new_protocol_state;
+
+				if(msg_pos_counter > 13){
+					rc5_transfer_finished = 1;
+					first_rising_edge = 1;
+					protocol_state = RC5STATE_MID1;
+					msg_pos_counter = 1;
+				}
+			}
+
 		}
 	}
 }

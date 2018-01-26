@@ -126,8 +126,8 @@ void Init_gyari_motor_PWM()
 //		HAL_TIM_PWM_Start(&Tim4Handle, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&Tim1Handle, TIM_CHANNEL_2);
 
-//	Tim1Handle.Instance->CCR2 = GYARI_MOTOR_COUNTER_KOZEP;
-	Tim1Handle.Instance->CCR2 = 6500;
+	Tim1Handle.Instance->CCR2 = GYARI_MOTOR_COUNTER_KOZEP;
+//	Tim1Handle.Instance->CCR2 = 6500;
 }
 
 void Init_sajat_motor_PWM()

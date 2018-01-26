@@ -34,7 +34,7 @@ uint16_t gyorsulas_max = 6640;
 uint16_t lassulas_min = 6540;
 uint8_t state = 0;
 
-uint16_t motor_value = 6500;
+uint16_t motor_value = 6200;
 
 //int8_t sorszam[32] = {-18,-17,-16,-15,-14,-13,-12,-8,-7,-6,-5,-4,-3,-2,-1,0,0,1,2,3,4,5,6,7,8,12,13,14,15,16,17,18};		//szenzorsorszámok a súlyozáshoz
 int8_t sorszam[32] = {-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};		//szenzorsorszámok a súlyozáshoz
@@ -324,6 +324,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 					else if(space_counter == 2){
 						sscanf(command_buffer, "%u", &motor_value);
 						BT_UART_Send_adc_value(motor_value);
+						set_gyari_motor_compare_value(motor_value);
 					} else if(space_counter == 3){
 //						sscanf(command_buffer, "%u %u %u %u", &KP_fast, &KD_fast, &KP_slow, &);
 					} else if(space_counter == 4){

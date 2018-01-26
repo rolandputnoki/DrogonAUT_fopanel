@@ -14,6 +14,7 @@ C_SRCS += \
 ../src/dma.c \
 ../src/encoder.c \
 ../src/gyari_radio_vevo_jel_meres.c \
+../src/infra_receiver.c \
 ../src/lsm6ds3.c \
 ../src/main.c \
 ../src/motor_pwm.c \
@@ -34,6 +35,7 @@ OBJS += \
 ./src/dma.o \
 ./src/encoder.o \
 ./src/gyari_radio_vevo_jel_meres.o \
+./src/infra_receiver.o \
 ./src/lsm6ds3.o \
 ./src/main.o \
 ./src/motor_pwm.o \
@@ -54,6 +56,7 @@ C_DEPS += \
 ./src/dma.d \
 ./src/encoder.d \
 ./src/gyari_radio_vevo_jel_meres.d \
+./src/infra_receiver.d \
 ./src/lsm6ds3.d \
 ./src/main.d \
 ./src/motor_pwm.d \

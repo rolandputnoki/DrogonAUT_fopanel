@@ -33,6 +33,9 @@ extern uint16_t motor_value;
 extern uint8_t state;
 
 
+//Encoderhez
+extern uint32_t ic1, ic2;
+
 #define ROBOT_STATE_SIZE 79
 typedef struct RobotState {
 	uint16_t sensor_values[32];

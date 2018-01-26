@@ -28,4 +28,6 @@ uint8_t vonalak_szama();
 
 extern uint8_t new_cycle;
 
+uint16_t capture_ertek;
+
 #endif /* BSP_H_ */
