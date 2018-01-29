@@ -7,6 +7,7 @@
 
 #include <szervo_pwm.h>
 #include "bsp.h"
+#include "encoder.h"
 
 
 
@@ -143,14 +144,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 	{
 		now_inc_value = get_encoder_counter();
 		inc_difference = -1*(now_inc_value - prev_inc_value);
-		speed_of_drogon = 0.03f*(float)inc_difference;
+		speed_of_drogon = ENCODER_VALUE_TO_MM*(float)inc_difference;
 		prev_inc_value = now_inc_value;
 
 	}
 }
 
 
-/*
+/*speed_of_drogon
 
 void TIM4_IRQHandler(void)
 {

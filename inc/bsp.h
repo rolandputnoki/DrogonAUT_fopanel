@@ -26,6 +26,7 @@ void init_LED2();
 extern TIM_HandleTypeDef Tim7Handle;
 
 uint8_t vonalak_szama();
+uint8_t csikok_szama(uint32_t);
 
 extern uint8_t new_cycle;
 
@@ -45,7 +46,9 @@ typedef enum {
 	START = 2,
 	KORFORGALOM = 4,
 	HORDO = 5,
-	UTCA_SAROK = 6
+	UTCA_SAROK = 6,
+	GYORSIT = 7,
+	LASSIT = 8
 
 } Robot_state;
 

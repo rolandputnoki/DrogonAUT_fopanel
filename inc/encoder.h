@@ -14,3 +14,5 @@
 
 //Magnetic field indicator PB9
 #define M_FIELD_IND GPIO_PIN_9
+
+#define ENCODER_VALUE_TO_MM 0.0285f

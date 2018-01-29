@@ -5,6 +5,7 @@
 #include "bsp.h"
 #include "adc.h"
 #include "dma.h"
+#include "encoder.h"
 
 #include "sharp_hosszu.h"
 #include "sharp_rovid.h"
@@ -42,9 +43,10 @@ int16_t pd_value = 0;
 
 
 
+uint16_t KP_speed = 20;
+uint16_t KI_speed = 2;
 
-
-
+float integrator_ertek = 0;
 
 //Hány vonalt érzékelünk
 uint8_t vonalak = 0;
@@ -59,7 +61,7 @@ uint32_t valami;
 uint32_t * sharp2 = &valami;
 uint16_t mag_dec = 0;
 uint32_t encoder_value = 0;
-
+uint8_t vonalak_szama_a_mereskor = 0;
 
 
 
@@ -79,7 +81,7 @@ int main(){
 
 
 	char buffer[10];
-	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
+//	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
 
 
 	while(1)
@@ -88,6 +90,7 @@ int main(){
 //		set_compare_value_digit_szervo()
 
 		if(new_cycle){
+
 			ciklus();
 /*
 			mag_dec = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
@@ -111,10 +114,11 @@ int main(){
 
 
 
-			if(sebesseg_tarto_counter > 10){
+			if(sebesseg_tarto_counter > 5){
 				speed_diff = wanted_speed - speed_of_drogon;
 
-				motor_value += (int)(speed_diff*10);
+				integrator_ertek += speed_diff;
+				motor_value = 6480 + (int)(speed_diff*KP_speed) + (int)(KI_speed*integrator_ertek);
 
 				if(motor_value > GYARI_MOTOR_COUNTER_MAX){
 					motor_value = GYARI_MOTOR_COUNTER_MAX;
@@ -124,11 +128,15 @@ int main(){
 				set_gyari_motor_compare_value(motor_value);
 
 /*
-				itoa(adc_eredmeny , buffer, 10);
-				BT_UART_SendString("AD érték:  ");
+				itoa((int)(speed_of_drogon*1000) , buffer, 10);
+				BT_UART_SendString("Sebesség :  ");
 				BT_UART_SendString(buffer);
 				BT_UART_SendString("\r\n");
 
+*/
+
+
+/*
 				itoa(sharp_tomb_rovid[adc_eredmeny] , buffer, 10);
 				BT_UART_SendString("Távolság mm-ben:  ");
 				BT_UART_SendString(buffer);
@@ -158,12 +166,7 @@ uint8_t dir = 0;
 
 uint8_t elozo_vonalak[3];
 uint8_t vonal_szamlalo = 0;
-
-
 uint8_t csucs_kereses = 0;
-
-
-
 uint8_t dummy_flag = 0;
 
 
@@ -175,14 +178,13 @@ uint8_t dummy_flag = 0;
 uint8_t first_cycle = 1;
 
 
-#define ONE_CYCLE_MEASERES 20
-uint8_t harom_vonal_cnt = 0;
-uint8_t measure_cnt = 0;
 
-uint8_t just_measured_three_full_lines = 0;
-uint8_t just_measured_one_line = 0;
-uint8_t just_measured_three_dashed_lines = 0;
-uint8_t accelerate = 0;
+/*****************************************/
+//Gyorsasági pálya jelzés felismerés
+#define ONE_CYCLE_MEASERES 50
+
+
+
 
 //Milyen gyorsan változtatjuk a motor feszültségét
 uint16_t cycle_counter_motor = 0;
@@ -219,8 +221,29 @@ int32_t szumma_sulyozott_hatso = 0;
 //Orientáció
 float delta_orient = 0;
 
+
+
+
+
+//Hosszú 3as vonal és szaggatott 3as vonal felismerés
+Robot_state state_of_robot = START;
+//mm mértékegységben
+uint16_t kivant_tavolsag = 200;
+
+
+
+uint32_t meres_kezdeti_encoder_ertek = 0;
+uint32_t meres_mostani_encoder_ertek = 0;
+uint32_t meres_megtett_tavolsag = 0;
+uint32_t meresen_beluli_sorszam = 0;
+uint16_t ket_meres_kozotti_tavolsagok_sorrendben[100];
+uint8_t meresek_3as_vonal_szama_sorrendben[100];
+uint16_t meres_harom_vonal_szamlalo = 0;
+uint8_t eloszor_egyes_aztan_vegig_harmas = 0;
+
 void ciklus(){
 
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
 	szumma_adc_values_elso = 0;
 	szumma_sulyozott_elso = 0;
 
@@ -244,6 +267,8 @@ void ciklus(){
 
 	if(first_cycle){
 		first_cycle = 0;
+
+		meres_kezdeti_encoder_ertek = get_encoder_counter();
 	} else {
 
 
@@ -294,7 +319,91 @@ void ciklus(){
 			p_hatso = 0;
 		}
 
+		vonalak_szama_a_mereskor = vonalak_szama();
+		char bufi[10];
+		itoa((int)(vonalak_szama_a_mereskor), bufi, 10);
+		BT_UART_SendString("Vonalszám:  ");
+		BT_UART_SendString(bufi);
+		BT_UART_SendString("\r\n");
+
 /*
+		if(meres_megtett_tavolsag <= kivant_tavolsag){
+
+			if(vonalak_szama() == 3){
+				meresek_3as_vonal_szama_sorrendben[meresen_beluli_sorszam] = 1;
+				meres_harom_vonal_szamlalo++;
+			} else if(vonalak_szama() == 1){
+				meresek_3as_vonal_szama_sorrendben[meresen_beluli_sorszam] = 0;
+			}
+
+
+			if(meresen_beluli_sorszam == 0){
+				meres_kezdeti_encoder_ertek = get_encoder_counter();
+				meresen_beluli_sorszam = 1;
+			} else {
+
+				meres_mostani_encoder_ertek = get_encoder_counter();
+				if(meres_mostani_encoder_ertek == meres_kezdeti_encoder_ertek){
+
+				} else {
+
+					//mm mértékegységben
+					meres_megtett_tavolsag = (meres_kezdeti_encoder_ertek - meres_mostani_encoder_ertek)*0.03f;
+
+					meresen_beluli_sorszam++;
+				}
+
+			}
+
+
+		} else {
+
+			uint8_t csik = csikok_szama(meresen_beluli_sorszam);
+
+			if(csik >= 1){
+				state = GYORSIT;
+			}
+
+			if(eloszor_egyes_aztan_vegig_harmas){
+				state = LASSIT;
+			}
+
+			meres_megtett_tavolsag = 0;
+			meresen_beluli_sorszam = 0;
+		}
+
+
+		switch(state_of_robot) {
+
+		case START:
+			BT_UART_SendString("Indulas ");
+
+			break;
+
+		case KORFORGALOM:
+
+			break;
+
+		case GYORSIT:
+			BT_UART_SendString("Gyors szakasz ");
+			break;
+
+		case LASSIT:
+			BT_UART_SendString("Lassu szakasz ");
+			break;
+
+		default:
+
+			break;
+
+		}
+
+		char bufi[10];
+		itoa((int)(meres_megtett_tavolsag), bufi, 10);
+		BT_UART_SendString(bufi);
+		BT_UART_SendString("\r\n");
+*/
+
 //PD szabályzoó egy vonalszenzor alapján
 
 
@@ -315,8 +424,16 @@ void ciklus(){
 		pd_value = KP_slow*p_elso + KD_slow*D;
 		prev_pos = p_elso;
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
-*/
+		set_compare_value_digit_szervo(szervo_value);
+		meres_mostani_encoder_ertek = get_encoder_counter();
+		meres_megtett_tavolsag = (meres_kezdeti_encoder_ertek - meres_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
+/*
+		char bufi[10];
+		itoa((int)(meres_megtett_tavolsag), bufi, 10);
+		BT_UART_SendString(bufi);
+		BT_UART_SendString("\r\n");
+*/
 
 //Szabályzás a pozíció és a vonal orientációja alapján
 	/*
@@ -330,23 +447,30 @@ void ciklus(){
 			}
 		}
 */
+
+	/*
 		p_elso_in_mm = (2*p_elso + 1)*ElSO_KORR_MM;
 		p_hatso_in_mm = (2*p_hatso + 1)*HATSO_KORR_MM;
 
 		delta_orient = atan2((p_elso_in_mm - p_hatso_in_mm),L_SENSORS)*RADIAN_TO_DEGREE_CONV;
 
 
-		pd_value = 400*p_elso + 1100*(int)delta_orient;
+		pd_value = 400*p_elso + 600*(int)delta_orient;
 
 
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
 		set_compare_value_digit_szervo(szervo_value);
-		new_cycle = 0;
+	*/
 
+
+
+		new_cycle = 0;
+/*
 		char bufi[10];
 		itoa((int)(szervo_value), bufi, 10);
 		BT_UART_SendString(bufi);
 		BT_UART_SendString("\r\n");
+		*/
 	}
 
 }
@@ -418,6 +542,70 @@ void send_encoder_values_over_uart(){
 	BT_UART_SendString("\r\n");
 
 	*/
+}
+
+uint8_t csikok_szama(uint32_t hossz){
+	uint8_t csucs_kezdete = 0;
+	uint8_t cnt = 0;
+	uint32_t m;
+	uint8_t kezdetben_egyes = 0;
+	uint8_t most_fekete = 0;
+	uint8_t vegig_fekete = 0;
+	for(m = 0; m < hossz; m++){
+
+
+		//Megnézem, hogy az elsõ 3as vagy egyes vonal
+		if(meresek_3as_vonal_szama_sorrendben[0] == 0){
+
+			kezdetben_egyes = 1;
+		} else {
+
+			kezdetben_egyes = 0;
+		}
+
+
+		//Ha kezdetben egyes vonal volt, akkor megvizsgálom, hogy 3as lesz-e
+		//Azon belül, ha 3as lett, azt várom, hogy végig 3as legyen.
+		if(kezdetben_egyes){
+			if(meresek_3as_vonal_szama_sorrendben[m] == 1 && most_fekete == 0){
+				most_fekete = 1;
+				vegig_fekete = 1;
+			}
+
+			if(most_fekete){
+				if(meresek_3as_vonal_szama_sorrendben[m] == 0){
+					vegig_fekete = 0;
+					kezdetben_egyes = 0;
+				}
+			}
+		}
+
+
+		if(!csucs_kezdete){
+			if(meresek_3as_vonal_szama_sorrendben[m] != 0){
+				csucs_kezdete = 1;
+
+			}
+		} else {
+			if(meresek_3as_vonal_szama_sorrendben[m] == 0){
+				csucs_kezdete = 0;
+				cnt++;
+			}
+		}
+	}
+
+	if(vegig_fekete){
+		eloszor_egyes_aztan_vegig_harmas = 1;
+	}
+
+	if(meresek_3as_vonal_szama_sorrendben[0] == 1){
+
+		cnt--;
+	} else {
+
+	}
+
+	return cnt;
 }
 
 
