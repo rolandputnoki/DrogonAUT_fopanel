@@ -18,6 +18,8 @@ uint32_t adc_eredmeny = 0;
 //SPI fogadási flag
 uint8_t data_received = 1;
 
+uint16_t KP_kormany = 0;
+uint16_t KD_kormany = 0;
 
 
 //Szabályozás
@@ -63,16 +65,17 @@ uint16_t mag_dec = 0;
 uint32_t encoder_value = 0;
 uint8_t vonalak_szama_a_mereskor = 0;
 
+Robot_state state_of_robot = START;
 
-
-float wanted_speed = 1.0f;
+float wanted_speed = 0.8f;
 
 uint8_t sebesseg_tarto_counter = 0;
 
 float speed_diff = 0;
 int main(){
 
-
+	KP_kormany = KP_slow;
+	KD_kormany = KD_slow;
 
 	// HAL_Init, System_Clock_config és hardware inicializáció
     init_all();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             	init_all();
@@ -147,6 +150,13 @@ int main(){
 				sebesseg_tarto_counter++;
 			}
 
+			if(state_of_robot == LASSIT){
+				if(speed_of_drogon < 1.0f){
+					KP_kormany = KP_slow;
+					KD_kormany = KD_slow;
+				}
+			}
+
 		}
 
 	}
@@ -181,20 +191,15 @@ uint8_t first_cycle = 1;
 
 /*****************************************/
 //Gyorsasági pálya jelzés felismerés
-#define ONE_CYCLE_MEASERES 50
+/*****************************************/
+#define ONE_CYCLE_MEASERES 100
+uint8_t vonalak_szama_sorrendben[ONE_CYCLE_MEASERES];
+uint16_t felismeres_cycle_counter = 0;
+uint8_t adott_meres_vonal_szama = 0;
+uint8_t meresi_cikluson_beluli_3as_vonal_szam = 0;
+/*****************************************/
 
 
-
-
-//Milyen gyorsan változtatjuk a motor feszültségét
-uint16_t cycle_counter_motor = 0;
-
-//Állapotok: Indul, Gyorsít, Lassít,
-
-uint8_t eppen_indulunk = 1;
-
-uint16_t harom_vonalas_szamlalo = 0;
-uint8_t kanyar_parameterek = 1;
 
 char bt_adc_value[10];
 
@@ -202,7 +207,10 @@ char bt_adc_value[10];
 
 
 
-//
+/*****************************************/
+//Változók az spi adatfogadáshoz
+//és pozíció számoláshoz mindkét szenzorsor esetén
+/*****************************************/
 uint16_t adcAdatok_hatso[32];
 uint16_t adcAdatok_elso[32];
 
@@ -217,6 +225,8 @@ int32_t szumma_sulyozott_elso = 0;
 
 uint32_t szumma_adc_values_hatso = 0;
 int32_t szumma_sulyozott_hatso = 0;
+/*****************************************/
+
 
 //Orientáció
 float delta_orient = 0;
@@ -226,7 +236,7 @@ float delta_orient = 0;
 
 
 //Hosszú 3as vonal és szaggatott 3as vonal felismerés
-Robot_state state_of_robot = START;
+
 //mm mértékegységben
 uint16_t kivant_tavolsag = 200;
 
@@ -319,13 +329,43 @@ void ciklus(){
 			p_hatso = 0;
 		}
 
+		if(felismeres_cycle_counter < ONE_CYCLE_MEASERES){
+
+			if(felismeres_cycle_counter == 0){
+				BT_UART_SendString("Elso\r\n");
+			}
+			adott_meres_vonal_szama = vonalak_szama();
+			vonalak_szama_sorrendben[felismeres_cycle_counter] = adott_meres_vonal_szama;
+
+			if(adott_meres_vonal_szama == 3){
+				meresi_cikluson_beluli_3as_vonal_szam++;
+			}
+
+			felismeres_cycle_counter++;
+
+			vonalak_szama_a_mereskor = vonalak_szama();
+			char bufi[10];
+			itoa((int)(adott_meres_vonal_szama), bufi, 10);
+			BT_UART_SendString(bufi);
+			BT_UART_SendString("\r\n");
+		} else {
+			change_state();
+			meresi_cikluson_beluli_3as_vonal_szam = 0;
+			felismeres_cycle_counter = 0;
+		}
+
+
+
+
+
+/*
 		vonalak_szama_a_mereskor = vonalak_szama();
 		char bufi[10];
-		itoa((int)(vonalak_szama_a_mereskor), bufi, 10);
+		itoa((int)(adott_meres_vonal_szama), bufi, 10);
 		BT_UART_SendString("Vonalszám:  ");
 		BT_UART_SendString(bufi);
 		BT_UART_SendString("\r\n");
-
+*/
 /*
 		if(meres_megtett_tavolsag <= kivant_tavolsag){
 
@@ -372,12 +412,12 @@ void ciklus(){
 			meresen_beluli_sorszam = 0;
 		}
 
-
+*/
 		switch(state_of_robot) {
 
 		case START:
 			BT_UART_SendString("Indulas ");
-
+			BT_UART_SendString("\r\n");
 			break;
 
 		case KORFORGALOM:
@@ -386,10 +426,17 @@ void ciklus(){
 
 		case GYORSIT:
 			BT_UART_SendString("Gyors szakasz ");
+			BT_UART_SendString("\r\n");
+			KP_kormany = KP_fast;
+			KD_kormany = KD_fast;
+			wanted_speed = 1.3f;
 			break;
 
 		case LASSIT:
 			BT_UART_SendString("Lassu szakasz ");
+			BT_UART_SendString("\r\n");
+			wanted_speed = 0.5f;
+
 			break;
 
 		default:
@@ -397,7 +444,7 @@ void ciklus(){
 			break;
 
 		}
-
+/*
 		char bufi[10];
 		itoa((int)(meres_megtett_tavolsag), bufi, 10);
 		BT_UART_SendString(bufi);
@@ -421,7 +468,7 @@ void ciklus(){
 			}
 		}
 
-		pd_value = KP_slow*p_elso + KD_slow*D;
+		pd_value = KP_kormany*p_elso + KD_kormany*D;
 		prev_pos = p_elso;
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
 		set_compare_value_digit_szervo(szervo_value);
@@ -495,6 +542,48 @@ uint8_t vonalak_szama(){
 		}
 	}
 	return cnt;
+}
+
+uint8_t csucsok_szama(){
+	uint8_t csucs_kezdete = 0;
+	uint8_t csucs_vege = 0;
+	uint8_t cnt = 0;
+	uint16_t m;
+	uint8_t kezdes = 1;
+
+
+
+	for(m = 0; m < ONE_CYCLE_MEASERES; m++){
+
+		if(kezdes){
+			if(vonalak_szama_sorrendben[m] == 1){
+				kezdes = 0;
+			}
+		}
+
+		else {
+			if(!csucs_kezdete){
+				if(vonalak_szama_sorrendben[m] == 3){
+					csucs_kezdete = 1;
+				}
+			} else {
+				if(vonalak_szama_sorrendben[m] == 1){
+					csucs_kezdete = 0;
+					cnt++;
+				}
+			}
+		}
+
+
+	}
+/*
+	if(cnt == 0 && csucs_kezdete == 1){
+		return 10;
+	} else {
+
+	*/
+		return cnt;
+
 }
 
 
@@ -608,4 +697,25 @@ uint8_t csikok_szama(uint32_t hossz){
 	return cnt;
 }
 
+
+void change_state(){
+	uint8_t csucsok = csucsok_szama();
+
+	if(csucsok >= 1 && csucsok < 10){
+		state_of_robot = GYORSIT;
+	}
+
+	char bufi[10];
+	itoa(csucsok, bufi, 10);
+	BT_UART_SendString(bufi);
+	BT_UART_SendString("\r\n");
+
+	if(meresi_cikluson_beluli_3as_vonal_szam == ONE_CYCLE_MEASERES){
+		state_of_robot = LASSIT;
+	}
+
+	itoa(meresi_cikluson_beluli_3as_vonal_szam, bufi, 10);
+	BT_UART_SendString(bufi);
+	BT_UART_SendString("\r\n");
+}
 

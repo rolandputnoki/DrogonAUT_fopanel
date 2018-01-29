@@ -25,6 +25,8 @@ UART_InitTypeDef bt_iuart, rr_iuart;
 uint8_t stop = 0;
 uint16_t max_motor_value = 6200;
 
+
+
 uint16_t KP_slow = 900;
 uint16_t KD_slow = 900;
 uint16_t KP_fast = 500;
