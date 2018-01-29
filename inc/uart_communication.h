@@ -30,6 +30,7 @@ extern uint16_t indulas_max;
 extern uint16_t gyorsulas_max;
 extern uint16_t lassulas_min;
 extern uint16_t motor_value;
+extern uint16_t szervo_value;
 extern uint8_t state;
 
 

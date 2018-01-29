@@ -6,6 +6,9 @@
 #include "adc.h"
 #include "dma.h"
 
+#include "sharp_hosszu.h"
+#include "sharp_rovid.h"
+
 //SPI1
 SPI_HandleTypeDef spi;
 
@@ -19,7 +22,13 @@ uint8_t data_received = 1;
 //Szabályozás
 
 float prev_pos = 0.0f;
-float p = 0.0f;
+float p_elso = 0.0f;
+float p_hatso = 0.0f;
+
+float p_elso_in_mm = 0.0f;
+float p_hatso_in_mm = 0.0f;
+
+
 float p_atmenet = 0.0f;
 float D = 0.0f;
 int32_t p_prev_konv = 0;
@@ -30,17 +39,11 @@ int16_t pd_value = 0;
 
 
 //PWM compare értékek állítása
-uint16_t szervo_value = DIGIT_SZ_KOZEP;
 
 
 
-//
-uint16_t adcAdatok[32];
-uint16_t adcAdatok_2[32];
-uint16_t adcAdatok_buffer[32];
 
-uint16_t adcAdatok_buffer_2[32];
-int32_t adcAdatok_sulyozott[32];
+
 
 
 //Hány vonalt érzékelünk
@@ -56,91 +59,90 @@ uint32_t valami;
 uint32_t * sharp2 = &valami;
 uint16_t mag_dec = 0;
 uint32_t encoder_value = 0;
+
+
+
+
+float wanted_speed = 1.0f;
+
+uint8_t sebesseg_tarto_counter = 0;
+
+float speed_diff = 0;
 int main(){
 
 
 
 	// HAL_Init, System_Clock_config és hardware inicializáció
-	init_all();
-
+    init_all();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             	init_all();
+    HAL_Delay(2000);
 
 
 
 	char buffer[10];
+	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
 
-
-
-
-
-//	HAL_Delay(5000);
 
 	while(1)
 	{
-//		set_gyari_motor_compare_value(motor_value);
-		mag_dec = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
 
-		HAL_Delay(50);
+//		set_compare_value_digit_szervo()
 
-//		motor_value = 6500;
-
-		encoder_value = get_encoder_counter();
-
-//		itoa(capture_ertek, buffer, 10);
-		BT_UART_SendString("Mag_dec:  ");
-		itoa(mag_dec, buffer, 10);
-		BT_UART_SendString(buffer);
-		BT_UART_SendString("\r\n");
-
-		itoa(encoder_value, buffer, 10);
-		BT_UART_SendString(buffer);
-		BT_UART_SendString("\r\n");
-
-
-	}
-
-
-
-
-
-	/*
-	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
-
-
-
-	while(1){
 		if(new_cycle){
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
 			ciklus();
-			encoder_value = get_encoder_counter();
-			send_encoder_values_over_uart();
-//			BT_UART_SendString("Hello_Hello_Hello_Hello_Hello_Hello_Hello_Hello_12");
-		}
-	}
+/*
+			mag_dec = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
 
+//			HAL_Delay(20);
+
+			encoder_value = get_encoder_counter();
+
+	//		itoa(capture_ertek, buffer, 10);
+			BT_UART_SendString("Sharp:  ");
+			itoa(adc_eredmeny, buffer, 10);
+			BT_UART_SendString(buffer);
+			BT_UART_SendString("\r\n");
+			*/
+/*
+			itoa(encoder_value, buffer, 10);
+			BT_UART_SendString(buffer);
+			BT_UART_SendString("\r\n");
 */
 
-//	Init_gyari_motor_PWM();
-
-
-	/*
-	ADC_Init();
-	ConfigureDMA();
-
-
-//	HAL_ADC_Start_IT(&g_AdcHandle);
-	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
-	for(;;)
-	{
 
 
 
-		HAL_Delay(10);
+			if(sebesseg_tarto_counter > 10){
+				speed_diff = wanted_speed - speed_of_drogon;
 
-		uint8_t macska = 0;
+				motor_value += (int)(speed_diff*10);
+
+				if(motor_value > GYARI_MOTOR_COUNTER_MAX){
+					motor_value = GYARI_MOTOR_COUNTER_MAX;
+				} else if(motor_value < GYARI_MOTOR_COUNTER_KOZEP){
+					motor_value = GYARI_MOTOR_COUNTER_KOZEP;
+				}
+				set_gyari_motor_compare_value(motor_value);
+
+/*
+				itoa(adc_eredmeny , buffer, 10);
+				BT_UART_SendString("AD érték:  ");
+				BT_UART_SendString(buffer);
+				BT_UART_SendString("\r\n");
+
+				itoa(sharp_tomb_rovid[adc_eredmeny] , buffer, 10);
+				BT_UART_SendString("Távolság mm-ben:  ");
+				BT_UART_SendString(buffer);
+				BT_UART_SendString("\r\n");
+*/
+				sebesseg_tarto_counter = 0;
+			} else {
+				sebesseg_tarto_counter++;
+			}
+
+		}
+
 	}
 
-
-	*/
 }
 
 
@@ -194,20 +196,48 @@ uint8_t kanyar_parameterek = 1;
 
 char bt_adc_value[10];
 
+
+
+
+
+//
+uint16_t adcAdatok_hatso[32];
+uint16_t adcAdatok_elso[32];
+
+uint16_t adcAdatok_buffer_hatso[32];
+uint16_t adcAdatok_buffer_elso[32];
+
+int32_t adcAdatok_sulyozott_elso[32];
+int32_t adcAdatok_sulyozott_hatso[32];
+
+uint32_t szumma_adc_values_elso = 0;
+int32_t szumma_sulyozott_elso = 0;
+
+uint32_t szumma_adc_values_hatso = 0;
+int32_t szumma_sulyozott_hatso = 0;
+
+//Orientáció
+float delta_orient = 0;
+
 void ciklus(){
-	uint32_t szumma_adc_values = 0;
-	int32_t szumma_sulyozott = 0;
+
+	szumma_adc_values_elso = 0;
+	szumma_sulyozott_elso = 0;
+
+	szumma_adc_values_hatso = 0;
+	szumma_sulyozott_hatso = 0;
+
 
 	// Adatfogadás kezdete
 	data_received = 0;
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer, 64);
+	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer_hatso, 64);
 	while(!data_received);
 
 
 	data_received = 0;
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
-	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer_2, 64);
+	HAL_SPI_Receive_IT(&spi, adcAdatok_buffer_elso, 64);
 	while(!data_received);
 
 	// Adatfogadás vége
@@ -216,20 +246,23 @@ void ciklus(){
 		first_cycle = 0;
 	} else {
 
-		for(uint8_t n = 0; n<32; n++){
-			// Csak a világító ledekhez tartozó AD adatokat tartjuk meg
-			if(adcAdatok_buffer[n] <= 2000){
 
-				adcAdatok[n] = 0;
+
+		// Csak a világító ledekhez tartozó AD adatokat tartjuk meg
+		for(uint8_t n = 0; n<32; n++){
+
+			if(adcAdatok_buffer_hatso[n] <= 2000){
+
+				adcAdatok_hatso[n] = 0;
 			} else {
-				adcAdatok[n] = adcAdatok_buffer[n];
+				adcAdatok_hatso[n] = adcAdatok_buffer_hatso[n];
 			}
 
-			if(adcAdatok_buffer_2[n] <= 2000){
+			if(adcAdatok_buffer_elso[n] <= 2000){
 
-				adcAdatok_2[n] = 0;
+				adcAdatok_elso[n] = 0;
 			} else {
-				adcAdatok_2[n] = adcAdatok_buffer_2[n];
+				adcAdatok_elso[n] = adcAdatok_buffer_elso[n];
 			}
 		}
 
@@ -237,47 +270,84 @@ void ciklus(){
 		//arányos tényezõ számítása
 		for(int i = 0; i < 32; i++)
 		{
-			szumma_adc_values += adcAdatok_2[i];
-			adcAdatok_sulyozott[i] = adcAdatok_2[i] * sorszam[i];			//súlyozás
-			szumma_sulyozott += adcAdatok_sulyozott[i];
+			szumma_adc_values_elso += adcAdatok_elso[i];
+			adcAdatok_sulyozott_elso[i] = adcAdatok_elso[i] * sorszam[i];			//súlyozás
+			szumma_sulyozott_elso += adcAdatok_sulyozott_elso[i];
+
+			szumma_adc_values_hatso += adcAdatok_hatso[i];
+			adcAdatok_sulyozott_hatso[i] = adcAdatok_hatso[i] * sorszam[i];			//súlyozás
+			szumma_sulyozott_hatso += adcAdatok_sulyozott_hatso[i];
+
 		}
 
-		//Pozíció
-		if(szumma_adc_values != 0){
-			p = (float)szumma_sulyozott/szumma_adc_values;
+		//Elsõ szenzorsor pozíció
+		if(szumma_adc_values_elso != 0){
+			p_elso = (float)szumma_sulyozott_elso/szumma_adc_values_elso;
 		} else {
-			p = 0;
+			p_elso = 0;
 		}
 
-		//Pozíció hiba
-		error = p-setValue;
+		//Hátsó szenzorsor pozíció
+		if(szumma_adc_values_hatso != 0){
+			p_hatso = (float)szumma_sulyozott_hatso/szumma_adc_values_hatso;
+		} else {
+			p_hatso = 0;
+		}
+
+/*
+//PD szabályzoó egy vonalszenzor alapján
+
+
 		//Differencia az elõzõ pozíció hibától
-		D = error-prev_error;
+		D = p_elso-prev_pos;
 
 
 		if(prev_pos > 14 || prev_pos < -14){
-			p_atmenet = p;
+			p_atmenet = p_elso;
 			if(p_atmenet < 0){
 				p_atmenet *= -1;
 			}
 			if(p_atmenet < 3){
-				p = prev_pos;
+				p_elso = prev_pos;
 			}
 		}
 
-
-		pd_value = KP_slow*p + KD_slow*D;
-
-		prev_pos = p;
+		pd_value = KP_slow*p_elso + KD_slow*D;
+		prev_pos = p_elso;
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
-		prev_error = error;
+*/
+
+
+//Szabályzás a pozíció és a vonal orientációja alapján
+	/*
+		if(prev_pos > 14 || prev_pos < -14){
+			p_atmenet = p_elso;
+			if(p_atmenet < 0){
+				p_atmenet *= -1;
+			}
+			if(p_atmenet < 3){
+				p_elso = prev_pos;
+			}
+		}
+*/
+		p_elso_in_mm = (2*p_elso + 1)*ElSO_KORR_MM;
+		p_hatso_in_mm = (2*p_hatso + 1)*HATSO_KORR_MM;
+
+		delta_orient = atan2((p_elso_in_mm - p_hatso_in_mm),L_SENSORS)*RADIAN_TO_DEGREE_CONV;
+
+
+		pd_value = 400*p_elso + 1100*(int)delta_orient;
+
+
+		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
 		set_compare_value_digit_szervo(szervo_value);
-
-
 		new_cycle = 0;
 
+		char bufi[10];
+		itoa((int)(szervo_value), bufi, 10);
+		BT_UART_SendString(bufi);
+		BT_UART_SendString("\r\n");
 	}
-
 
 }
 
@@ -289,12 +359,12 @@ uint8_t vonalak_szama(){
 	uint8_t m;
 	for(m = 0; m < 32; m++){
 		if(!csucs_kezdete){
-			if(adcAdatok_2[m] != 0){
+			if(adcAdatok_elso[m] != 0){
 				csucs_kezdete = 1;
 
 			}
 		} else {
-			if(adcAdatok_2[m] == 0){
+			if(adcAdatok_elso[m] == 0){
 				csucs_kezdete = 0;
 				cnt++;
 			}
@@ -315,7 +385,7 @@ void send_adc_values_over_bt(void){
 		buff[2] = 0;
 		buff[3] = 0;
 		buff[4] = 0;
-		itoa(adcAdatok_buffer[i], buff, 10);
+		itoa(adcAdatok_buffer_hatso[i], buff, 10);
 		BT_UART_SendString(buff);
 		BT_UART_SendString(" ");
 	}
@@ -327,7 +397,7 @@ void send_adc_values_over_bt(void){
 		buff[2] = 0;
 		buff[3] = 0;
 		buff[4] = 0;
-		itoa(adcAdatok_buffer_2[i], buff, 10);
+		itoa(adcAdatok_buffer_elso[i], buff, 10);
 		BT_UART_SendString(buff);
 		BT_UART_SendString(" ");
 	}

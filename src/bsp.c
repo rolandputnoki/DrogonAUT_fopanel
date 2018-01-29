@@ -17,7 +17,7 @@ uint8_t new_cycle = 0;
 /** Globï¿½lis funkciï¿½k inicializï¿½lï¿½sa. */
 
 
-TIM_HandleTypeDef Tim7Handle;
+TIM_HandleTypeDef Tim7Handle, Tim9Handle;
 
 
 void init_all(){
@@ -33,8 +33,8 @@ void init_all(){
 	Init_gyari_motor_PWM();
 
 	//Motor input capture
-	set_gy_rv_af_motor();
-	Init_input_capture_motor();
+//	set_gy_rv_af_motor();
+//	Init_input_capture_motor();
 
 	//Gyorsulásmérõ
 	I2C_Init(0);
@@ -61,6 +61,7 @@ void init_all(){
 	init_mag_inc_dec_pin();
 	encoder_init();
 
+	init_sebesseg_mero_timer();
 
 	//Infra vevõ
 	init_infra_rev_pin();
@@ -93,7 +94,9 @@ void TIM7_IRQHandler(void)
 }
 
 
-
+void TIM1_BRK_TIM9_IRQHandler(void){
+	HAL_TIM_IRQHandler(&Tim9Handle);
+}
 
 
 
@@ -114,6 +117,14 @@ void Sys_DelayMs(int ms)
 /* ----------------- Megszakï¿½tï¿½skezelï¿½ ï¿½s callback fï¿½ggvï¿½nyek ----------------- */
 
 
+uint32_t prev_inc_value = 0;
+uint32_t now_inc_value = 0;
+int32_t inc_difference;
+
+float speed_of_drogon = 0;
+
+char s_buff[30];
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 {
 	UNUSED(handle);
@@ -124,9 +135,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 	}
 
 	if (handle->Instance == TIM7)
-		{
+	{
 			new_cycle = 1;
-		}
+	}
+
+	if (handle->Instance == TIM9)
+	{
+		now_inc_value = get_encoder_counter();
+		inc_difference = -1*(now_inc_value - prev_inc_value);
+		speed_of_drogon = 0.03f*(float)inc_difference;
+		prev_inc_value = now_inc_value;
+
+	}
 }
 
 
@@ -232,3 +252,23 @@ void init_mag_inc_dec_pin(){
 	GPIO_InitStructure.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
+
+
+void init_sebesseg_mero_timer()
+{
+	//Tim9 168 MHz
+	__TIM9_CLK_ENABLE();
+
+	Tim9Handle.Instance = TIM9;
+	Tim9Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	Tim9Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+	Tim9Handle.Init.Prescaler = 167;
+	Tim9Handle.Init.Period = 999;
+	Tim9Handle.State = HAL_TIM_STATE_RESET;
+	HAL_TIM_Base_Init(&Tim9Handle);
+	HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+	HAL_TIM_Base_Start_IT(&Tim9Handle);
+}
+
+

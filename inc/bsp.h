@@ -17,6 +17,7 @@ void Sys_DelayMs(int ms);
 void GlobalFunctions_Init(void);
 void SystemClock_Config(void);
 void init_all();
+void init_sebesseg_mero_timer();
 
 //#define UNUSED(a) (void)a;
 
@@ -29,5 +30,23 @@ uint8_t vonalak_szama();
 extern uint8_t new_cycle;
 
 uint16_t capture_ertek;
+
+extern float speed_of_drogon;
+
+#define ONE_INC_IN_METER 0.00003f
+#define L_SENSORS 182.0f
+#define SENSORS_DIFF 0.8135f
+#define ElSO_KORR_MM 2.9845f
+#define HATSO_KORR_MM 3.721f
+
+#define RADIAN_TO_DEGREE_CONV 57.2958f
+
+typedef enum {
+	START = 2,
+	KORFORGALOM = 4,
+	HORDO = 5,
+	UTCA_SAROK = 6
+
+} Robot_state;
 
 #endif /* BSP_H_ */
