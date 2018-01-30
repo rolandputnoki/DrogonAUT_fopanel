@@ -231,6 +231,9 @@ uint8_t command_bit_counter = 0;
 uint8_t space_counter = 0;
 char command_buffer[20];
 char command_buffer_sorszam[150];
+
+uint8_t meg_jott_a_start_kapu_jele = 0;
+uint8_t elso_indulas = 1;
 /** Callback függvény, mely sikeres adatfogadás végét jelzi. */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 {
@@ -370,15 +373,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 	} else if(handle->Instance == USART3)
 	{
 
-		set_gyari_motor_compare_value(GYARI_MOTOR_COUNTER_KOZEP);
-		while(1)
-		{
+		if(elso_indulas){
+			lastReceivedNumber = rr_rxBuffer;
+			if(lastReceivedNumber == '0'){
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+				meg_jott_a_start_kapu_jele = 1;
+				elso_indulas = 0;
+			}
+		} else {
+			set_gyari_motor_compare_value(GYARI_MOTOR_COUNTER_KOZEP);
+			while(1)
+			{
 
+			}
 		}
-		lastReceivedNumber = rr_rxBuffer;
-		if(lastReceivedNumber == '0'){
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		}
+
+
 		HAL_UART_Receive_IT(&rr_huart, &rr_rxBuffer, 1);
 	}
 

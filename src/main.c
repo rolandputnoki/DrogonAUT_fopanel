@@ -67,7 +67,7 @@ uint8_t vonalak_szama_a_mereskor = 0;
 
 Robot_state state_of_robot = START;
 
-float wanted_speed = 0.8f;
+float wanted_speed = 0.9f;
 
 uint8_t sebesseg_tarto_counter = 0;
 
@@ -84,7 +84,7 @@ int main(){
 
 
 	char buffer[10];
-//	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny, 1);
+	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny, 1);
 
 
 	int32_t x,y,z;
@@ -93,26 +93,15 @@ int main(){
 
 		HAL_Delay(100);
 
-		LMS6DS3_Read_Axes_with_correction(&x, &y, &z);
 
-
-/*
-		itoa(x, buffer, 10);
+		itoa(adc_eredmeny, buffer, 10);
 		BT_UART_SendString(buffer);
 		BT_UART_SendString("\r\n");
 
-		itoa(y, buffer, 10);
-		BT_UART_SendString(buffer);
-		BT_UART_SendString("\r\n");
-
-		itoa(z, buffer, 10);
-		BT_UART_SendString(buffer);
-		BT_UART_SendString("\r\n");
-*/
 
 //		set_compare_value_digit_szervo()
 
-//		if(new_cycle){
+		if(new_cycle){
 
 //			ciklus();
 /*
@@ -136,20 +125,9 @@ int main(){
 
 
 
-/*
-			if(sebesseg_tarto_counter > 5){
-				speed_diff = wanted_speed - speed_of_drogon;
 
-				integrator_ertek += speed_diff;
-				motor_value = 6480 + (int)(speed_diff*KP_speed) + (int)(KI_speed*integrator_ertek);
 
-				if(motor_value > GYARI_MOTOR_COUNTER_MAX){
-					motor_value = GYARI_MOTOR_COUNTER_MAX;
-				} else if(motor_value < GYARI_MOTOR_COUNTER_KOZEP){
-					motor_value = GYARI_MOTOR_COUNTER_KOZEP;
-				}
-				set_gyari_motor_compare_value(motor_value);
-				*/
+
 
 /*
 				itoa((int)(speed_of_drogon*1000) , buffer, 10);
@@ -166,12 +144,10 @@ int main(){
 				BT_UART_SendString(buffer);
 				BT_UART_SendString("\r\n");
 */
-			/*
-				sebesseg_tarto_counter = 0;
-			} else {
-				sebesseg_tarto_counter++;
-			}
 
+
+
+			/*
 			if(state_of_robot == LASSIT){
 				if(speed_of_drogon < 1.0f){
 					KP_kormany = KP_slow;
@@ -180,7 +156,7 @@ int main(){
 			}
 			*/
 
-//		}
+		}
 
 	}
 
@@ -352,6 +328,7 @@ void ciklus(){
 			p_hatso = 0;
 		}
 
+		/*
 		if(felismeres_cycle_counter < ONE_CYCLE_MEASERES){
 
 			if(felismeres_cycle_counter == 0){
@@ -376,7 +353,7 @@ void ciklus(){
 			meresi_cikluson_beluli_3as_vonal_szam = 0;
 			felismeres_cycle_counter = 0;
 		}
-
+*/
 
 
 
@@ -436,6 +413,7 @@ void ciklus(){
 		}
 
 */
+		/*
 		switch(state_of_robot) {
 
 		case START:
@@ -467,6 +445,7 @@ void ciklus(){
 			break;
 
 		}
+		*/
 /*
 		char bufi[10];
 		itoa((int)(meres_megtett_tavolsag), bufi, 10);
@@ -497,6 +476,13 @@ void ciklus(){
 		set_compare_value_digit_szervo(szervo_value);
 		meres_mostani_encoder_ertek = get_encoder_counter();
 		meres_megtett_tavolsag = (meres_kezdeti_encoder_ertek - meres_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
+
+		if(!meg_jott_a_start_kapu_jele){
+
+		} else {
+			sebesseg_szabalyzas();
+		}
+
 
 /*
 		char bufi[10];
@@ -740,5 +726,25 @@ void change_state(){
 	itoa(meresi_cikluson_beluli_3as_vonal_szam, bufi, 10);
 	BT_UART_SendString(bufi);
 	BT_UART_SendString("\r\n");
+}
+
+void sebesseg_szabalyzas(void){
+	if(sebesseg_tarto_counter > 5){
+		speed_diff = wanted_speed - speed_of_drogon;
+
+		integrator_ertek += speed_diff;
+		motor_value = 6480 + (int)(speed_diff*KP_speed) + (int)(KI_speed*integrator_ertek);
+
+		if(motor_value > GYARI_MOTOR_COUNTER_MAX){
+			motor_value = GYARI_MOTOR_COUNTER_MAX;
+		} else if(motor_value < GYARI_MOTOR_COUNTER_KOZEP){
+			motor_value = GYARI_MOTOR_COUNTER_KOZEP;
+		}
+		set_gyari_motor_compare_value(motor_value);
+
+	sebesseg_tarto_counter = 0;
+	} else {
+	sebesseg_tarto_counter++;
+	}
 }
 

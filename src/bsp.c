@@ -28,6 +28,11 @@ void init_all(){
 	HAL_Init(); 			//init HAL library
 	SystemClock_Config(); 	//set system clock
 
+
+
+	//Start kapuhoz
+	Radio_UART_Init();
+
 	//Szervo indítás
 	Init_AF_szervo();
 	Init_Digit_Szervo_PWM();

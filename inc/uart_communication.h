@@ -33,6 +33,8 @@ extern uint16_t motor_value;
 extern uint16_t szervo_value;
 extern uint8_t state;
 
+extern uint8_t meg_jott_a_start_kapu_jele;
+
 
 //Encoderhez
 extern uint32_t ic1, ic2;

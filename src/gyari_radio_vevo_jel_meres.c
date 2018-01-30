@@ -266,9 +266,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 					if(bit_counter >= 28){
 						uint16_t kutya = 0;
 						uint16_t uzenet = bits_in_message[22]*4 + bits_in_message[24]*2 + bits_in_message[26]*1;
+
+
+						/*
+						//Teszthez
+
 						char buffferem[6];
 						itoa(uzenet, buffferem, 10);
 						BT_UART_SendString(buffferem);
+						*/
+
 						bit_counter = 0;
 						first_edge = 1;
 					}
