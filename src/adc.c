@@ -78,7 +78,7 @@ void ADC2_Init()
 
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV4;
-  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc2.Init.Resolution = ADC_RESOLUTION_10B;
   hadc2.Init.ScanConvMode = DISABLE;
   hadc2.Init.ContinuousConvMode = ENABLE;
   hadc2.Init.DiscontinuousConvMode = DISABLE;

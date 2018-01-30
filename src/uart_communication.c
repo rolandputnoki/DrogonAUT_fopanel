@@ -369,6 +369,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 
 	} else if(handle->Instance == USART3)
 	{
+
+		set_gyari_motor_compare_value(GYARI_MOTOR_COUNTER_KOZEP);
+		while(1)
+		{
+
+		}
 		lastReceivedNumber = rr_rxBuffer;
 		if(lastReceivedNumber == '0'){
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);

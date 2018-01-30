@@ -11,6 +11,9 @@
 
 
 
+
+int16_t x_correction, y_correction, z_correction;
+
 volatile int sys_delay = 0;
 uint8_t new_cycle = 0;
 
@@ -66,7 +69,9 @@ void init_all(){
 
 	//Infra vevõ
 	init_infra_rev_pin();
-//	init_infra_timer();
+	init_infra_timer();
+
+	Set_LMS6DS3_correction_values();
 }
 
 void init_cuklus_timer(void)
@@ -270,6 +275,27 @@ void init_sebesseg_mero_timer()
 	HAL_NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
 	HAL_TIM_Base_Start_IT(&Tim9Handle);
+}
+
+void Set_LMS6DS3_correction_values()
+{
+	int32_t x,y,z;
+	if(LMS6DS3_Read_Axes(&x,&y,&z)){
+		BT_UART_SendString("Baj van!");
+	}
+	x_correction = x - X_ALAP;
+	y_correction = y - Y_ALAP;
+	z_correction = z - Z_ALAP;
+}
+
+void LMS6DS3_Read_Axes_with_correction(int32_t *x_axis, int32_t *y_axis, int32_t *z_axis){
+	if(LMS6DS3_Read_Axes(x_axis, y_axis, z_axis))
+	{
+		BT_UART_SendString("Baj van!");
+	}
+	*x_axis -= x_correction;
+	*y_axis -= y_correction;
+	*z_axis -= z_correction;
 }
 
 

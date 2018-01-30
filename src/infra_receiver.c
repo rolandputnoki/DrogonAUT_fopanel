@@ -33,7 +33,7 @@ void init_infra_timer()
 	Tim3Handle.Instance = TIM3;
 	Tim3Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	Tim3Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
-	Tim3Handle.Init.Prescaler = 83;
+	Tim3Handle.Init.Prescaler = 4199;
 	Tim3Handle.Init.Period = 0xFFFF;
 	Tim3Handle.State = HAL_TIM_STATE_RESET;
 

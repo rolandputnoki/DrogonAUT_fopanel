@@ -52,4 +52,12 @@ typedef enum {
 
 } Robot_state;
 
+/**************************/
+/* Giroszkóp alapértékek */
+#define X_ALAP 0
+#define Y_ALAP 0
+#define Z_ALAP 982
+/**************************/
+
+
 #endif /* BSP_H_ */

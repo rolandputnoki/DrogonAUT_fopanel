@@ -84,17 +84,37 @@ int main(){
 
 
 	char buffer[10];
-//	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny, 1);
+//	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny, 1);
 
 
+	int32_t x,y,z;
 	while(1)
 	{
 
+		HAL_Delay(100);
+
+		LMS6DS3_Read_Axes_with_correction(&x, &y, &z);
+
+
+/*
+		itoa(x, buffer, 10);
+		BT_UART_SendString(buffer);
+		BT_UART_SendString("\r\n");
+
+		itoa(y, buffer, 10);
+		BT_UART_SendString(buffer);
+		BT_UART_SendString("\r\n");
+
+		itoa(z, buffer, 10);
+		BT_UART_SendString(buffer);
+		BT_UART_SendString("\r\n");
+*/
+
 //		set_compare_value_digit_szervo()
 
-		if(new_cycle){
+//		if(new_cycle){
 
-			ciklus();
+//			ciklus();
 /*
 			mag_dec = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
 
@@ -116,7 +136,7 @@ int main(){
 
 
 
-
+/*
 			if(sebesseg_tarto_counter > 5){
 				speed_diff = wanted_speed - speed_of_drogon;
 
@@ -129,6 +149,7 @@ int main(){
 					motor_value = GYARI_MOTOR_COUNTER_KOZEP;
 				}
 				set_gyari_motor_compare_value(motor_value);
+				*/
 
 /*
 				itoa((int)(speed_of_drogon*1000) , buffer, 10);
@@ -145,6 +166,7 @@ int main(){
 				BT_UART_SendString(buffer);
 				BT_UART_SendString("\r\n");
 */
+			/*
 				sebesseg_tarto_counter = 0;
 			} else {
 				sebesseg_tarto_counter++;
@@ -156,8 +178,9 @@ int main(){
 					KD_kormany = KD_slow;
 				}
 			}
+			*/
 
-		}
+//		}
 
 	}
 

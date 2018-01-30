@@ -119,6 +119,14 @@ uint16_t ic_count = 0;
 
 //RC5 protokollhoz
 
+uint8_t first_edge = 1;
+uint8_t bits_in_message[28];
+uint8_t bit_counter = 0;
+uint8_t cur_bit_is_high;
+uint8_t communication_is_ok = 1;
+
+uint8_t falling_edge = 0;
+
 RC5STATE protocol_state;
 RC5STATE new_protocol_state;
 uint8_t first_rising_edge = 1;
@@ -129,6 +137,8 @@ RC5EVENT cur_event;
 uint8_t rc5_message[14];
 uint8_t msg_pos_counter = 1;
 uint8_t rc5_transfer_finished = 0;
+
+uint16_t message = 0;
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
@@ -190,69 +200,96 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 		if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1 )
 		{
 
-			if(cur_is_rising_edge){
-				cur_is_rising_edge = 0;
+
+			if(communication_is_ok) {
+
+				cur_bit_is_high = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4);
+
+				if(first_edge){
+					htim->Instance->CNT = 0;
+					first_edge = 0;
+					bits_in_message[0] = 1;
+					bit_counter++;
+
+
+					if(cur_bit_is_high){
+						//Az elsõ él mindig lefutó él kell, hogy legyen. Ezért ha itt egyes, akkor felfutó él volt, tehát hiba van.
+						communication_is_ok = 0;
+					}
+				} else {
+
+					pulse_lenght = htim->Instance->CNT;
+					htim->Instance->CNT = 0;
+
+					if(pulse_lenght >  50){
+						bits_in_message[0] = 1;
+						bit_counter = 1;
+
+					}
+
+					if(pulse_lenght > 10 && pulse_lenght < 25){
+						if(cur_bit_is_high){
+							bits_in_message[bit_counter] = 0;
+							bit_counter++;
+
+							//Kiegészítés, mert már nem lesz több él, de 1 fél bit még kimaradt
+							if(bit_counter == 27){
+								bits_in_message[bit_counter] = 1;
+								bit_counter++;
+							}
+						} else {
+							bits_in_message[bit_counter] = 1;
+							bit_counter++;
+						}
+					}
+
+					if(pulse_lenght > 26 && pulse_lenght < 45){
+						if(cur_bit_is_high){
+							bits_in_message[bit_counter] = 0;
+							bit_counter++;
+							bits_in_message[bit_counter] = 0;
+							bit_counter++;
+
+							//Kiegészítés, mert már nem lesz több él, de 1 fél bit még kimaradt
+							if(bit_counter == 27){
+								bits_in_message[bit_counter] = 1;
+								bit_counter++;
+							}
+						} else {
+							bits_in_message[bit_counter] = 1;
+							bit_counter++;
+							bits_in_message[bit_counter] = 1;
+							bit_counter++;
+						}
+					}
+
+					if(bit_counter >= 28){
+						uint16_t kutya = 0;
+						uint16_t uzenet = bits_in_message[22]*4 + bits_in_message[24]*2 + bits_in_message[26]*1;
+						char buffferem[6];
+						itoa(uzenet, buffferem, 10);
+						BT_UART_SendString(buffferem);
+						bit_counter = 0;
+						first_edge = 1;
+					}
+				}
+
+
 			} else {
-				cur_is_rising_edge = 1;
+				pulse_lenght = htim->Instance->CNT;
+				htim->Instance->CNT = 0;
+
+				if(pulse_lenght > 50)
+				{
+					communication_is_ok = 1;
+					first_edge = 0;
+					bit_counter = 1;
+					bits_in_message[0] = 1;
+				}
 			}
 
 
-			if(first_rising_edge){
-				prev_edge_cnt = htim->Instance->CCR1;
-				protocol_state = RC5STATE_MID1;
-				first_rising_edge = 0;
 
-				rc5_message[0] = 1;
-			} else {
-				cur_edge_cnt = htim->Instance->CCR1;
-
-
-				if(cur_edge_cnt > prev_edge_cnt){
-					pulse_lenght = cur_edge_cnt - prev_edge_cnt;
-				}
-				//Túlcsordulás kezelése
-				else {
-					pulse_lenght = cur_edge_cnt + 65535 - prev_edge_cnt;
-				}
-
-				if(cur_is_rising_edge){
-					if(pulse_lenght > SHORT_MIN && pulse_lenght < SHORT_MAX){
-						cur_event = RC5EVENT_SHORTSPACE;
-					} else if(pulse_lenght > LONG_MIN && pulse_lenght < LONG_MAX){
-						cur_event = RC5EVENT_LONGSPACE;
-					}
-				} else {
-					if(pulse_lenght > SHORT_MIN && pulse_lenght < SHORT_MAX){
-						cur_event = RC5EVENT_SHORTPULSE;
-					} else if(pulse_lenght > LONG_MIN && pulse_lenght < LONG_MAX){
-						cur_event = RC5EVENT_LONGPULSE;
-					}
-				}
-
-
-				new_protocol_state = trans[protocol_state]>>cur_event & 0x03;
-
-				if(new_protocol_state == protocol_state){
-
-				} else {
-					if(new_protocol_state == RC5STATE_MID0){
-						rc5_message[msg_pos_counter] = 0;
-						msg_pos_counter++;
-					} else if(new_protocol_state == RC5STATE_MID1){
-						rc5_message[msg_pos_counter] = 1;
-						msg_pos_counter++;
-					}
-				}
-
-				protocol_state = new_protocol_state;
-
-				if(msg_pos_counter > 13){
-					rc5_transfer_finished = 1;
-					first_rising_edge = 1;
-					protocol_state = RC5STATE_MID1;
-					msg_pos_counter = 1;
-				}
-			}
 
 		}
 	}
