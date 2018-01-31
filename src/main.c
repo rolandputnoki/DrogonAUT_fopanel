@@ -45,8 +45,8 @@ int16_t pd_value = 0;
 
 
 
-uint16_t KP_speed = 20;
-uint16_t KI_speed = 2;
+uint16_t KP_speed = 80;
+uint16_t KI_speed = 5;
 
 float integrator_ertek = 0;
 
@@ -55,9 +55,17 @@ float integrator_ertek = 0;
 uint16_t elulso_sharp_szenzor;
 uint16_t jobb_oldali_sharp_szenzor;
 uint16_t bal_oldali_sharp_szenzor;
+
+uint32_t adc_eredmeny_jobb = 0;
+uint32_t adc_eredmeny_bal = 0;
+uint32_t adc_eredmeny_elso = 0;
 /**********************************/
 
 
+/**********************************/
+
+
+/**********************************/
 
 //Hány vonalat érzékelünk
 uint8_t vonalak = 0;
@@ -86,7 +94,9 @@ int main()
 
 
 	char buffer[10];
-	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny, 1);
+	HAL_ADC_Start_DMA(&hadc1, &adc_eredmeny_bal, (uint32_t)1);
+	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny_elso, (uint32_t)1);
+	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny_jobb, (uint32_t)1);
 
 	while(1)
 	{
@@ -99,7 +109,23 @@ int main()
 
 		if(new_cycle)
 		{
+			elulso_sharp_szenzor = sharp_tomb_hosszu[adc_eredmeny_elso];
+			jobb_oldali_sharp_szenzor = sharp_tomb_rovid[adc_eredmeny_jobb];
+			bal_oldali_sharp_szenzor = sharp_tomb_rovid[adc_eredmeny_bal];
 			ciklus();
+
+
+			BT_UART_SendString("J:  ");
+			itoa((int)(jobb_oldali_sharp_szenzor), buffer, 10);
+			BT_UART_SendString(buffer);
+			BT_UART_SendString("\r\n");
+
+			BT_UART_SendString("B:");
+			itoa((int)(bal_oldali_sharp_szenzor), buffer, 10);
+			BT_UART_SendString(buffer);
+			BT_UART_SendString("\r\n");
+
+
 		}
 	}
 }
@@ -191,6 +217,7 @@ uint16_t ket_meres_kozotti_tavolsagok_sorrendben[100];
 uint8_t meresek_3as_vonal_szama_sorrendben[100];
 uint16_t meres_harom_vonal_szamlalo = 0;
 uint8_t eloszor_egyes_aztan_vegig_harmas = 0;
+char buf10[10];
 
 void ciklus(){
 
@@ -280,7 +307,6 @@ void ciklus(){
 /****************************************************************/
 //PD szabályzoó egy vonalszenzor alapján
 
-
 		//Differencia az elõzõ pozíció hibától
 		D = p_elso-prev_pos;
 
@@ -297,13 +323,60 @@ void ciklus(){
 
 		pd_value = KP_kormany*p_elso + KD_kormany*D;
 		prev_pos = p_elso;
+
+
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
+
+
 		set_compare_value_digit_szervo(szervo_value);
 		meres_mostani_encoder_ertek = get_encoder_counter();
 		meres_megtett_tavolsag = (meres_kezdeti_encoder_ertek - meres_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
+/************************************************************************/
+/************************************************************************/
+
+		switch(state_of_robot){
 
 
+		case DRONE_KOVETKEZIK:
+
+			wanted_speed = (elulso_sharp_szenzor - 450)*0.00057f;
+			if(!speed_of_drogon || elulso_sharp_szenzor <= 450){
+					wanted_speed = 0.0f;
+					state_of_robot = DRONE_ELOTT_ALLUNK;
+
+
+			}
+			break;
+		case DRONE_ELOTT_ALLUNK:
+
+
+			itoa(elulso_sharp_szenzor, buf10, 10);
+			BT_UART_SendString(buf10);
+			BT_UART_SendString("\r\n");
+			if(elulso_sharp_szenzor >= 1200){
+				state_of_robot = DRONE_FELSZALLT;
+			}
+			break;
+		case DRONE_FELSZALLT:
+
+			start_milisec_szamlalo = 1;
+			if(milisec_szamlalo > 2100){
+				wanted_speed = 0.9f;
+				state_of_robot = JUST_GOING;
+			}
+			break;
+		case JUST_GOING:
+
+			break;
+
+		default:
+
+			break;
+		}
+
+
+/************************************************************************/
 
 		if(!meg_jott_a_start_kapu_jele){
 
@@ -382,10 +455,8 @@ void jelzes_felismeres(uint8_t vonal_szam){
 		harmas_vonal_hossza = (harmas_vonal_kezdete_encoder_ertek - harmas_vonal_vege_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
 		if(harmas_vonal_hossza > 110){
-			set_gyari_motor_compare_value(6200);
-			while(1){
-
-			}
+//			set_gyari_motor_compare_value(6200);
+			state_of_robot = DRONE_KOVETKEZIK;
 		}
 		if(vonal_szam == 1){
 			harmas_vonal_van = 0;
@@ -419,7 +490,6 @@ void jelzes_felismeres(uint8_t vonal_szam){
 
 uint8_t csucsok_szama(){
 	uint8_t csucs_kezdete = 0;
-	uint8_t csucs_vege = 0;
 	uint8_t cnt = 0;
 	uint16_t m;
 	uint8_t kezdes = 1;

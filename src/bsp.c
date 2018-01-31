@@ -11,6 +11,12 @@
 
 
 
+/***********************************/
+/* Drón 2másodperces várakozásához */
+extern uint16_t milisec_szamlalo = 0;
+extern uint16_t start_milisec_szamlalo = 0;
+/***********************************/
+
 
 int16_t x_correction, y_correction, z_correction;
 
@@ -152,6 +158,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 
 	if (handle->Instance == TIM9)
 	{
+
+		if(start_milisec_szamlalo){
+			milisec_szamlalo++;
+		}
 		now_inc_value = get_encoder_counter();
 		inc_difference = -1*(now_inc_value - prev_inc_value);
 		speed_of_drogon = ENCODER_VALUE_TO_MM*(float)inc_difference;

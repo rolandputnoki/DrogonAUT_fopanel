@@ -51,7 +51,8 @@ typedef enum {
 	LASSIT = 8,
 	DRONE_KOVETKEZIK = 9,
 	DRONE_ELOTT_ALLUNK = 10,
-	DRONE_FELSZALLT = 11
+	DRONE_FELSZALLT = 11,
+	JUST_GOING = 12
 
 } Robot_state;
 
@@ -61,6 +62,12 @@ typedef enum {
 #define Y_ALAP 0
 #define Z_ALAP 982
 /**************************/
+
+/***********************************/
+/* Drón 2másodperces várakozásához */
+uint16_t milisec_szamlalo;
+uint16_t start_milisec_szamlalo;
+/***********************************/
 
 
 #endif /* BSP_H_ */
