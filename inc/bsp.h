@@ -48,7 +48,10 @@ typedef enum {
 	HORDO = 5,
 	UTCA_SAROK = 6,
 	GYORSIT = 7,
-	LASSIT = 8
+	LASSIT = 8,
+	DRONE_KOVETKEZIK = 9,
+	DRONE_ELOTT_ALLUNK = 10,
+	DRONE_FELSZALLT = 11
 
 } Robot_state;
 
