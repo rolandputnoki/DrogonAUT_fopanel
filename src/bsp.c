@@ -313,4 +313,3 @@ void LMS6DS3_Read_Axes_with_correction(int32_t *x_axis, int32_t *y_axis, int32_t
 	*z_axis -= z_correction;
 }
 
-

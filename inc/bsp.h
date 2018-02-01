@@ -26,7 +26,12 @@ void init_LED2();
 extern TIM_HandleTypeDef Tim7Handle;
 
 uint8_t vonalak_szama();
+uint8_t vil_ledek_szama();
 uint8_t csikok_szama(uint32_t);
+void korforgalom_jelzes_felismeres();
+void fal_felismeres();
+void sebesseg_szabalyzas();
+
 
 extern uint8_t new_cycle;
 
@@ -44,17 +49,39 @@ extern float speed_of_drogon;
 
 typedef enum {
 	START = 2,
-	KORFORGALOM = 4,
-	HORDO = 5,
-	UTCA_SAROK = 6,
+	KORFORGALOM_KOVETKEZIK = 4,
+	HORDO_KOVETKEZIK = 5,
+	UTCA_SAROK_DUPLA_FAL = 6,
+	UTCA_SAROK_MASODIK_FAL_JOBB = 13,
+	UTCA_SAROK_MASODIK_FAL_BAL = 14,
+	UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET = 15,
+	UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET = 16,
 	GYORSIT = 7,
 	LASSIT = 8,
 	DRONE_KOVETKEZIK = 9,
 	DRONE_ELOTT_ALLUNK = 10,
 	DRONE_FELSZALLT = 11,
-	JUST_GOING = 12
+	JUST_GOING = 12,
+	KONVOJ_KOVETKEZIK_JELZES_A_BAL_OLDALON = 17,
+	KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON = 18,
+	KORFORG_JOBBRA_1 = 19,
+	KORFORG_JOBBRA_2 = 20,
+	KORFORG_JOBBRA_3 = 21,
+	KORFORG_BALRA_1 = 22,
+	KORFORG_BALRA_2 = 23,
+	KORFORG_BALRA_3 = 24
 
 } Robot_state;
+
+
+typedef enum {
+	JOBBRA_ELSO = 1,
+	JOBBRA_MASODIK = 2,
+	JOBBRA_HARMADIK = 3,
+	BALRA_ELSO = 4,
+	BALRA_MASODIK = 5,
+	BALRA_HARMADIK = 6
+} KORFORGALOM_UZENET;
 
 /**************************/
 /* Giroszkóp alapértékek */
@@ -67,6 +94,13 @@ typedef enum {
 /* Drón 2másodperces várakozásához */
 uint16_t milisec_szamlalo;
 uint16_t start_milisec_szamlalo;
+/***********************************/
+
+
+/***********************************/
+/* Körforgalom jelvétel */
+KORFORGALOM_UZENET korforgalom_uzenet;
+uint8_t korforgalom_cim_stimmel;
 /***********************************/
 
 

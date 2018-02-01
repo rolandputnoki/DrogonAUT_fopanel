@@ -13,6 +13,16 @@
 #include "infra_receiver.h"
 #include "rc5.h"
 
+
+
+/***********************************/
+/* Körforgalom jelvétel */
+extern uint8_t korforgalom_uzenet = 0;
+extern uint8_t korforgalom_cim_stimmel = 0;
+/***********************************/
+
+
+
 uint16_t ic_tomb[500];
 
 extern uint16_t capture_ertek = 0;
@@ -264,17 +274,22 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 					}
 
 					if(bit_counter >= 28){
-						uint16_t kutya = 0;
-						uint16_t uzenet = bits_in_message[22]*4 + bits_in_message[24]*2 + bits_in_message[26]*1;
+						korforgalom_uzenet = bits_in_message[22]*4 + bits_in_message[24]*2 + bits_in_message[26]*1;
 
 
-						/*
+//						uint8_t uzenet_cim = bits_in_message[8]*8 + bits_in_message[10]*4 + bits_in_message[12]*2 + bits_in_message[14]*1;
+						if((bits_in_message[8]*8 + bits_in_message[10]*4 + bits_in_message[12]*2 + bits_in_message[14]*1) == 13){
+							korforgalom_cim_stimmel = 1;
+
+						}
+
+/*
 						//Teszthez
 
 						char buffferem[6];
-						itoa(uzenet, buffferem, 10);
+						itoa(uzenet_cim, buffferem, 10);
 						BT_UART_SendString(buffferem);
-						*/
+*/
 
 						bit_counter = 0;
 						first_edge = 1;
