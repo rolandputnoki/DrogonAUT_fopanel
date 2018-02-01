@@ -35,6 +35,7 @@ void fal_felismeres();
 void sebesseg_szabalyzas();
 void jelzes_felismeres(uint8_t);
 void kereszt_vonal_felismeres(uint8_t);
+void konvoj_elhaladas_felismeres();
 
 extern uint8_t new_cycle;
 
@@ -59,6 +60,8 @@ typedef enum {
 	UTCA_SAROK_MASODIK_FAL_BAL = 14,
 	UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET = 15,
 	UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET = 16,
+	UTCA_SAROK_JOBB_FALAS_TOLATAS = 31,
+	UTCA_SAROK_BAL_FALAS_TOLATAS = 32,
 	GYORSIT = 7,
 	LASSIT = 8,
 	DRONE_KOVETKEZIK = 9,
@@ -74,7 +77,11 @@ typedef enum {
 	KORFORG_BALRA_2 = 23,
 	KORFORG_BALRA_3 = 24,
 	GYOZELEM = 25,
-	VASUTI_ATJARO_KOVETKEZIK = 26
+	VASUTI_ATJARO_KOVETKEZIK = 26,
+	VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR = 27,
+	VASUTI_ATJARO_EGYSZER_ATHALADTUNK = 28,
+	VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA = 29,
+	VASUTI_ATJARO_KETSZER_ATHALADTUNK = 30
 
 } Robot_state;
 
@@ -107,6 +114,18 @@ uint16_t start_milisec_szamlalo;
 KORFORGALOM_UZENET korforgalom_uzenet;
 uint8_t korforgalom_cim_stimmel;
 /***********************************/
+
+
+/**************************************************************/
+/* Konvoj elhaladás felismerés segédváltozók  */
+/* Konvoj elhaladásának méréséhez */
+uint16_t egy_auto_elhaladasanak_ideje;
+uint16_t egy_res_ideje;
+uint8_t most_rest_merunk;
+uint8_t most_autot_merunk;
+uint8_t autot_erzekeltem;
+uint16_t varakozasi_ido;
+/**************************************************************/
 
 
 #endif /* BSP_H_ */

@@ -18,6 +18,21 @@ extern uint16_t start_milisec_szamlalo = 0;
 /***********************************/
 
 
+/**************************************************************/
+/* Konvoj elhaladás felismerés segédváltozók  */
+/* Konvoj elhaladásának méréséhez */
+extern uint16_t egy_auto_elhaladasanak_ideje = 0;
+extern uint16_t egy_res_ideje = 0;
+extern uint8_t most_rest_merunk = 0;
+extern uint8_t most_autot_merunk = 0;
+
+/* Egyszerûbb változathoz*/
+
+extern uint8_t autot_erzekeltem = 0;
+extern uint16_t varakozasi_ido = 0;
+/**************************************************************/
+
+
 int16_t x_correction, y_correction, z_correction;
 
 volatile int sys_delay = 0;
@@ -159,9 +174,26 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 	if (handle->Instance == TIM9)
 	{
 
-		if(start_milisec_szamlalo){
+		if(start_milisec_szamlalo)
+		{
 			milisec_szamlalo++;
 		}
+
+
+		if(most_rest_merunk)
+		{
+			egy_res_ideje++;
+		}
+
+		if(most_autot_merunk){
+			egy_auto_elhaladasanak_ideje++;
+		}
+
+
+		if(autot_erzekeltem){
+			varakozasi_ido++;
+		}
+
 		now_inc_value = get_encoder_counter();
 		inc_difference = -1*(now_inc_value - prev_inc_value);
 		speed_of_drogon = ENCODER_VALUE_TO_MM*(float)inc_difference;
