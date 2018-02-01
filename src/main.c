@@ -191,12 +191,6 @@ uint8_t meresi_cikluson_beluli_3as_vonal_szam = 0;
 
 
 
-char bt_adc_value[10];
-
-
-
-
-
 /*****************************************/
 //Változók az spi adatfogadáshoz
 //és pozíció számoláshoz mindkét szenzorsor esetén
@@ -218,35 +212,12 @@ int32_t szumma_sulyozott_hatso = 0;
 /*****************************************/
 
 
-//Orientáció
-float delta_orient = 0;
-
-
-
-
-
-//Hosszú 3as vonal és szaggatott 3as vonal felismerés
-
-//mm mértékegységben
-uint16_t kivant_tavolsag = 200;
-
-
-
 uint32_t meres_kezdeti_encoder_ertek = 0;
 uint32_t meres_mostani_encoder_ertek = 0;
 uint32_t meres_megtett_tavolsag = 0;
-uint32_t meresen_beluli_sorszam = 0;
-uint16_t ket_meres_kozotti_tavolsagok_sorrendben[100];
-uint8_t meresek_3as_vonal_szama_sorrendben[100];
-uint16_t meres_harom_vonal_szamlalo = 0;
-uint8_t eloszor_egyes_aztan_vegig_harmas = 0;
 char buf10[10];
 
 uint8_t vil_led = 0;
-
-
-
-
 
 /*************************************************/
 /*                 UTCASAROK segédváltozók  */
@@ -286,8 +257,6 @@ void ciklus(){
 
 		meres_kezdeti_encoder_ertek = get_encoder_counter();
 	} else {
-
-
 
 		// Csak a világító ledekhez tartozó AD adatokat tartjuk meg
 		for(uint8_t n = 0; n<32; n++){
@@ -398,16 +367,17 @@ void ciklus(){
 			if(!speed_of_drogon || elulso_sharp_szenzor <= 550){
 					wanted_speed = 0.0f;
 					state_of_robot = DRONE_ELOTT_ALLUNK;
-
-
 			}
 			break;
 		case DRONE_ELOTT_ALLUNK:
 			BT_UART_SendString("DRONE all\r\n");
 
+/*TODO: Kiszedni, mert ez csak teszt
 			itoa(elulso_sharp_szenzor, buf10, 10);
 			BT_UART_SendString(buf10);
 			BT_UART_SendString("\r\n");
+
+*/
 			if(elulso_sharp_szenzor >= 1200){
 				state_of_robot = DRONE_FELSZALLT;
 			}
@@ -423,13 +393,13 @@ void ciklus(){
 			break;
 
 /****************************************************/
-			/* KÖRFORGALOM ÁLLAPOTAI */
+			/* UTCASAROK ÁLLAPOTAI */
 /****************************************************/
 
 		case UTCA_SAROK_DUPLA_FAL:
 			BT_UART_SendString("DUPLA FAL");
 			BT_UART_SendString("\r\n");
-
+			wanted_speed = 0.8f;
 			break;
 
 		case UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET:
@@ -449,11 +419,7 @@ void ciklus(){
 				utca_sarok_jobb_fal_hossz = (utca_sarok_jobb_fal_kezdet_encoder - utca_sarok_jobb_fal_mostani_encoder)*ENCODER_VALUE_TO_MM;
 
 				if(utca_sarok_jobb_fal_hossz >= 300){
-					set_gyari_motor_compare_value(5800);
-					if(speed_of_drogon == 0.0f)
-					{
-						state_of_robot = UTCA_SAROK_JOBB_FALAS_TOLATAS;
-					}
+					state_of_robot = UTCA_SAROK_JOBB_FALAS_TOLATAS;
 				}
 			}
 
@@ -461,12 +427,17 @@ void ciklus(){
 
 		case UTCA_SAROK_JOBB_FALAS_TOLATAS:
 			BT_UART_SendString("J TOLAT\r\n");
-			kormany_szabalyzas_on = 0;
-			sebesseg_szabalyzas_elore_on = 0;
-			set_compare_value_digit_szervo(DIGIT_SZ_MAX_CMP);
-			itoa(buf10, motor_value, 10);
-			BT_UART_SendString(buf10);
-			BT_UART_SendString("\r\n");
+
+			set_gyari_motor_compare_value(5800);
+			if(speed_of_drogon == 0.0f)
+			{
+				kormany_szabalyzas_on = 0;
+				sebesseg_szabalyzas_elore_on = 0;
+				set_compare_value_digit_szervo(DIGIT_SZ_MAX_CMP);
+				itoa(buf10, motor_value, 10);
+				BT_UART_SendString(buf10);
+				BT_UART_SendString("\r\n");
+			}
 
 			break;
 
@@ -486,13 +457,10 @@ void ciklus(){
 			break;
 
 
-		case HORDO_KOVETKEZIK:
-			BT_UART_SendString("HORDÓ\r\n");
-			set_gyari_motor_compare_value(6200);
-			while(1){
 
-			}
-			break;
+/****************************************************/
+			/* KONVOJ ÁLLAPOTAI */
+/****************************************************/
 
 		case KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON:
 			BT_UART_SendString("KONV J\r\n");
@@ -555,16 +523,15 @@ void ciklus(){
 			break;
 
 
+/****************************************************/
+			/* VASÚTI ÁTJÁRÓ ÁLLAPOTAI */
+/****************************************************/
 
 		case VASUTI_ATJARO_KOVETKEZIK:
 			set_gyari_motor_compare_value(5800);
 			BT_UART_SendString("HUHUHU");
 			while(1);
 			break;
-
-/****************************************************/
-			/* KÖRFORGALOM ÁLLAPOTAI */
-/****************************************************/
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR:
 			konvoj_elhaladas_felismeres();
@@ -581,6 +548,26 @@ void ciklus(){
 			konvoj_elhaladas_felismeres();
 			break;
 
+
+/****************************************************/
+			/* HORDÓ ÁLLAPOTAI */
+/****************************************************/
+
+
+		case HORDO_KOVETKEZIK:
+			BT_UART_SendString("HORDÓ\r\n");
+			set_gyari_motor_compare_value(6200);
+			while(1){
+
+			}
+			break;
+
+
+/****************************************************/
+			/* CÉL ÁLLAPOTAI */
+/****************************************************/
+
+
 		case GYOZELEM:
 			set_gyari_motor_compare_value(5800);
 			BT_UART_SendString("GYOZELEM");
@@ -592,6 +579,8 @@ void ciklus(){
 
 			break;
 		}
+
+
 
 
 /************************************************************************/
@@ -871,8 +860,6 @@ uint8_t auto_szam = 0;
 /**************************************************************/
 
 
-
-
 void konvoj_elhaladas_felismeres()
 {
 
@@ -1061,7 +1048,8 @@ void fal_felismeres(){
 
 	if(state_of_robot != UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET && state_of_robot != UTCA_SAROK_DUPLA_FAL
 			&& state_of_robot != UTCA_SAROK_MASODIK_FAL_JOBB && state_of_robot != UTCA_SAROK_MASODIK_FAL_BAL
-			&& state_of_robot != UTCA_SAROK_JOBB_FALAS_TOLATAS && state_of_robot != UTCA_SAROK_BAL_FALAS_TOLATAS){
+			&& state_of_robot != UTCA_SAROK_JOBB_FALAS_TOLATAS && state_of_robot != UTCA_SAROK_BAL_FALAS_TOLATAS)
+	{
 		if(jobb_oldali_sharp_szenzor <= 250 && bal_oldali_sharp_szenzor >= 300){
 
 			if(!jobb_oldalon_fal_van)
@@ -1096,10 +1084,6 @@ void fal_felismeres(){
 					state_of_robot = KONVOJ_KOVETKEZIK_JELZES_A_BAL_OLDALON;
 				}
 			}
-
-
-
-
 		}
 	}
 }
@@ -1122,7 +1106,6 @@ void korforgalom_jelzes_felismeres()
 			state_of_robot = KORFORG_JOBBRA_3;
 			break;
 
-
 		case BALRA_ELSO:
 			state_of_robot = KORFORG_BALRA_1;
 			break;
@@ -1140,47 +1123,6 @@ void korforgalom_jelzes_felismeres()
 
 		}
 	}
-}
-
-uint8_t csucsok_szama(){
-	uint8_t csucs_kezdete = 0;
-	uint8_t cnt = 0;
-	uint16_t m;
-	uint8_t kezdes = 1;
-
-
-
-	for(m = 0; m < ONE_CYCLE_MEASERES; m++){
-
-		if(kezdes){
-			if(vonalak_szama_sorrendben[m] == 1){
-				kezdes = 0;
-			}
-		}
-
-		else {
-			if(!csucs_kezdete){
-				if(vonalak_szama_sorrendben[m] == 3){
-					csucs_kezdete = 1;
-				}
-			} else {
-				if(vonalak_szama_sorrendben[m] == 1){
-					csucs_kezdete = 0;
-					cnt++;
-				}
-			}
-		}
-
-
-	}
-/*
-	if(cnt == 0 && csucs_kezdete == 1){
-		return 10;
-	} else {
-
-	*/
-		return cnt;
-
 }
 
 
