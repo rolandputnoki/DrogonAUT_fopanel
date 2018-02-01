@@ -12,6 +12,8 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_cortex.h"
 
+
+void SystemClock_Config();
 void Sys_DelayUs(int us);
 void Sys_DelayMs(int ms);
 void GlobalFunctions_Init(void);
@@ -31,7 +33,8 @@ uint8_t csikok_szama(uint32_t);
 void korforgalom_jelzes_felismeres();
 void fal_felismeres();
 void sebesseg_szabalyzas();
-
+void jelzes_felismeres(uint8_t);
+void kereszt_vonal_felismeres(uint8_t);
 
 extern uint8_t new_cycle;
 
@@ -69,7 +72,9 @@ typedef enum {
 	KORFORG_JOBBRA_3 = 21,
 	KORFORG_BALRA_1 = 22,
 	KORFORG_BALRA_2 = 23,
-	KORFORG_BALRA_3 = 24
+	KORFORG_BALRA_3 = 24,
+	GYOZELEM = 25,
+	VASUTI_ATJARO_KOVETKEZIK = 26
 
 } Robot_state;
 

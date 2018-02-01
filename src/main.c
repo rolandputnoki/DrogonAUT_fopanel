@@ -505,6 +505,21 @@ void ciklus(){
 			BT_UART_SendString("K B 3\r\n");
 			break;
 
+
+
+		case VASUTI_ATJARO_KOVETKEZIK:
+			set_gyari_motor_compare_value(5800);
+			BT_UART_SendString("HUHUHU");
+			while(1);
+			break;
+
+		case GYOZELEM:
+			set_gyari_motor_compare_value(5800);
+			BT_UART_SendString("GYOZELEM");
+			while(1);
+
+			break;
+
 		default:
 
 			break;
@@ -520,6 +535,7 @@ void ciklus(){
 		}
 
 		fal_felismeres();
+		kereszt_vonal_felismeres(vil_ledek_szama());
 		jelzes_felismeres(vonalak_szama());
 		korforgalom_jelzes_felismeres();
 /*******************************************/
@@ -604,7 +620,6 @@ int32_t kettes_vonal_vege_encoder_ertek = 0;
 int32_t kettes_vonal_mostani_encoder_ertek = 0;
 int32_t kettes_vonal_hossza = 0;
 /***************************/
-
 
 
 void jelzes_felismeres(uint8_t vonal_szam){
@@ -769,6 +784,84 @@ void jelzes_felismeres(uint8_t vonal_szam){
 	}
 
 }
+
+/**************************************************************/
+
+/* Keresztvonal felismerés segédváltozók  */
+
+uint8_t hanyszor_volt_kereszt_vonal = 0;
+uint8_t kereszt_vonal_van = 0;
+uint8_t elobb_kereszt_vonal_volt = 0;
+int32_t kereszt_vonal_utani_egyes_kezdete_encoder_ertek = 0;
+int32_t kereszt_vonal_utani_egyes_vege_encoder_ertek = 0;
+int32_t kereszt_vonal_utani_egyes_mostani_encoder_ertek = 0;
+int32_t kereszt_vonal_utani_egyes_hossza = 0;
+uint8_t egyes_vonal_volt_a_kereszt_utan = 0;
+
+
+/**************************************************************/
+
+
+void kereszt_vonal_felismeres(uint8_t ledek_szama)
+{
+
+	if(ledek_szama >= 30)
+		{
+
+
+			if(egyes_vonal_volt_a_kereszt_utan)
+			{
+				if(kereszt_vonal_utani_egyes_hossza <= 50){
+					state_of_robot = VASUTI_ATJARO_KOVETKEZIK;
+				}
+			}
+			if(elobb_kereszt_vonal_volt){
+				hanyszor_volt_kereszt_vonal++;
+			}
+
+			if(hanyszor_volt_kereszt_vonal >= 1){
+				kereszt_vonal_van = 1;
+				hanyszor_volt_kereszt_vonal = 0;
+				elobb_kereszt_vonal_volt = 0;
+			}
+
+			if(!kereszt_vonal_van){
+				elobb_kereszt_vonal_volt = 1;
+			}
+
+		}
+
+		if(kereszt_vonal_van)
+		{
+
+			if(ledek_szama <= 5){
+
+				if(!egyes_vonal_volt_a_kereszt_utan)
+				{
+					kereszt_vonal_utani_egyes_kezdete_encoder_ertek = get_encoder_counter();
+					egyes_vonal_volt_a_kereszt_utan = 1;
+				}
+				else
+				{
+					kereszt_vonal_utani_egyes_mostani_encoder_ertek = get_encoder_counter();
+					kereszt_vonal_utani_egyes_hossza = (kereszt_vonal_utani_egyes_kezdete_encoder_ertek - kereszt_vonal_utani_egyes_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
+
+					if(kereszt_vonal_utani_egyes_hossza >= 50)
+					{
+						state_of_robot = GYOZELEM;
+					}
+				}
+
+			}
+		}
+}
+
+
+
+
+
+
+
 
 
 

@@ -7,6 +7,13 @@
 
 #include "bsp.h"
 
+
+
+
+
+void Error_Handler();
+
+
 //CH_A --> PA0
 #define ENCODER_CH_A_PIN GPIO_PIN_0
 //CH_B --> PA1

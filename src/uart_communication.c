@@ -193,7 +193,7 @@ HAL_StatusTypeDef BT_UART_Send_Bytes(const char * str){
 }
 
 
-HAL_StatusTypeDef BT_UART_Send_adc_value(uint16_t value){
+void BT_UART_Send_adc_value(uint16_t value){
 	uint8_t i = 0;
 	if(value < 1000){
 		char digits[5];
@@ -290,44 +290,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 						for(uint8_t j = 0; j<20; j++){
 							command_buffer[j] = 0;
 						}
-					} else if(space_counter == 31){
-						sscanf(command_buffer_sorszam, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-								sorszam,
-								sorszam +1,
-								sorszam +2,
-								sorszam +3,
-								sorszam +4,
-								sorszam +5,
-								sorszam +6,
-								sorszam +7,
-								sorszam +8,
-								sorszam +9,
-								sorszam +10,
-								sorszam +11,
-								sorszam +12,
-								sorszam +13,
-								sorszam +14,
-								sorszam +15,
-								sorszam +16,
-								sorszam +17,
-								sorszam +18,
-								sorszam +19,
-								sorszam +20,
-								sorszam +21,
-								sorszam +22,
-								sorszam +23,
-								sorszam +24,
-								sorszam +25,
-								sorszam +26,
-								sorszam +27,
-								sorszam +28,
-								sorszam +29,
-								sorszam +30,
-								sorszam +31
-						);
-						for(uint8_t j = 0; j<20; j++){
-							command_buffer_sorszam[j] = 0;
-						}
 					}
 					else if(space_counter == 2){
 						szervo_value -= 500;
@@ -335,9 +297,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 						char ide_buff[10];
 						itoa(szervo_value, ide_buff, 10);
 						BT_UART_SendString(ide_buff);
-					} else if(space_counter == 3){
+					}
+					else if(space_counter == 3){
 //						sscanf(command_buffer, "%u %u %u %u", &KP_fast, &KD_fast, &KP_slow, &);
-					} else if(space_counter == 4){
+					}
+					else if(space_counter == 4){
 						state = 0;
 						sscanf(command_buffer, "%u %u %u %u", &KP_slow, &KD_slow, &KP_fast, &KD_fast);
 						for(uint8_t j = 0; j<20; j++){
