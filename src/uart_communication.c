@@ -286,17 +286,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 					comma_received = 0;
 
 					if(space_counter == 1){
-						sscanf(command_buffer, "%u %u", &KP_slow, &KD_slow);
+						uint8_t valami1 = 0;
+						sscanf(command_buffer, "%u %u", &motor_value,valami1);
+						set_gyari_motor_compare_value(motor_value);
 						for(uint8_t j = 0; j<20; j++){
 							command_buffer[j] = 0;
 						}
 					}
 					else if(space_counter == 2){
-						szervo_value -= 500;
+						uint8_t valami1, valami2;
+						sscanf(command_buffer, "%u %u %u", &szervo_value, &valami1, &valami2);
 						set_compare_value_digit_szervo(szervo_value);
-						char ide_buff[10];
-						itoa(szervo_value, ide_buff, 10);
-						BT_UART_SendString(ide_buff);
 					}
 					else if(space_counter == 3){
 //						sscanf(command_buffer, "%u %u %u %u", &KP_fast, &KD_fast, &KP_slow, &);

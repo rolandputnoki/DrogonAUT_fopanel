@@ -19,7 +19,7 @@
 
 
 #define GYARI_MOTOR_COUNTER_MAX	6600
-#define GYARI_MOTOR_COUNTER_MIN 5800
+#define GYARI_MOTOR_COUNTER_MIN 5600
 #define GYARI_MOTOR_COUNTER_KOZEP 6200
 
 extern TIM_HandleTypeDef Tim1Handle, Tim4Handle, Tim7Handle;

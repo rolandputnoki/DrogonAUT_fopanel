@@ -283,13 +283,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 						}
 
-/*
+
 						//Teszthez
 
 						char buffferem[6];
-						itoa(uzenet_cim, buffferem, 10);
+						itoa(korforgalom_uzenet, buffferem, 10);
 						BT_UART_SendString(buffferem);
-*/
+
 
 						bit_counter = 0;
 						first_edge = 1;

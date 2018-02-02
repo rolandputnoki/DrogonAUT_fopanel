@@ -63,6 +63,12 @@ typedef enum {
 	UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET = 9,
 	UTCA_SAROK_JOBB_FALAS_TOLATAS = 10,
 	UTCA_SAROK_BAL_FALAS_TOLATAS = 11,
+	UTCA_SAROK_JOBB_ARASZOLAS = 34,
+	UTCA_SAROK_BAL_ARASZOLAS = 35,
+
+
+
+
 	GYORSIT = 12,
 	LASSIT = 13,
 	DRONE_KOVETKEZIK = 14,
@@ -124,6 +130,17 @@ uint16_t start_milisec_szamlalo;
 KORFORGALOM_UZENET korforgalom_uzenet;
 uint8_t korforgalom_cim_stimmel;
 /***********************************/
+
+/***********************************/
+/* Utcasarok tolatas */
+uint16_t kozep_ido_milisec;
+uint16_t hatra_ido_milisec;
+uint8_t varjuk_meg_a_kozep_erteket;
+uint8_t varjuk_meg_a_hatra_erteket;
+uint8_t megvartuk_a_hatrat;
+uint8_t megvartuk_a_kozepet;
+/***********************************/
+
 
 
 /**************************************************************/

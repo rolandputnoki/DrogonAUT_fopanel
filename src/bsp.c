@@ -18,6 +18,17 @@ extern uint16_t start_milisec_szamlalo = 0;
 /***********************************/
 
 
+/***********************************/
+/* Utcasarok tolatas */
+extern uint16_t kozep_ido_milisec = 0;;
+extern uint16_t hatra_ido_milisec = 0;
+extern uint8_t varjuk_meg_a_kozep_erteket = 0;
+extern uint8_t megvartuk_a_kozepet = 0;
+extern uint8_t varjuk_meg_a_hatra_erteket = 0;
+extern uint8_t megvartuk_a_hatrat = 0;;
+/***********************************/
+
+
 /**************************************************************/
 /* Konvoj elhaladás felismerés segédváltozók  */
 /* Konvoj elhaladásának méréséhez */
@@ -192,6 +203,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 
 		if(autot_erzekeltem){
 			varakozasi_ido++;
+		}
+
+
+		if(varjuk_meg_a_kozep_erteket){
+			kozep_ido_milisec++;
+			if(megvartuk_a_kozepet){
+				kozep_ido_milisec = 0;
+			}
+		}
+
+		if(varjuk_meg_a_hatra_erteket){
+			hatra_ido_milisec++;
+			if(megvartuk_a_hatrat){
+				hatra_ido_milisec = 0;
+			}
 		}
 
 		now_inc_value = get_encoder_counter();
