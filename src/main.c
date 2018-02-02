@@ -113,7 +113,11 @@ int main()
 		itoa(adc_eredmeny, buffer, 10);
 		BT_UART_SendString(buffer);
 		BT_UART_SendString("\r\n");
+
+
 */
+
+
 
 		if(new_cycle)
 		{
@@ -228,6 +232,27 @@ int32_t utca_sarok_jobb_fal_hossz = 0;
 /*************************************************/
 
 
+
+/*************************************************/
+/*                 VASÚTI ÁTJÁRÓ segédváltozók  */
+int32_t v_a_jelzes_kezdet_encoder = 0;
+int32_t v_a_jelzes_mostani_encoder = 0;
+uint8_t v_a_jelezs_kezdet = 1;
+int32_t v_a_jelzes_utan_megtett_ut = 0;
+uint8_t meg_volt_a_kereszt_vonal = 0;
+
+uint8_t koztes_szakasz_kezdet = 1;
+int32_t koztes_szak_kezdet_encoder = 0;
+int32_t koztes_szak_mostani_encoder = 0;
+int32_t koztes_szak_hossz = 0;
+
+uint8_t megalltunk = 0;
+
+uint8_t v_a_elso_dupla_kereszt_mar_meg_volt = 0;
+uint8_t v_a_masodiik_dupla_kereszt_is_meg_volt = 0;
+/*************************************************/
+
+
 void ciklus(){
 
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
@@ -339,7 +364,15 @@ void ciklus(){
 		szervo_value = DIGIT_SZ_KOZEP + (int16_t)pd_value;
 
 		if(kormany_szabalyzas_on){
-			set_compare_value_digit_szervo(szervo_value);
+
+			if(vil_ledek_szama() == 0){
+//				set_compare_value_digit_szervo(33000);
+				set_compare_value_digit_szervo(33500);
+			} else {
+				set_compare_value_digit_szervo(szervo_value);
+			}
+
+
 		}
 
 
@@ -361,14 +394,7 @@ void ciklus(){
 /****************************************************/
 			/* DRÓN ÁLLAPOTAI */
 /****************************************************/
-		case DRONE_KOVETKEZIK:
-			BT_UART_SendString("DRONE köv\r\n");
-			wanted_speed = (elulso_sharp_szenzor - 550)*0.00057f;
-			if(!speed_of_drogon || elulso_sharp_szenzor <= 550){
-					wanted_speed = 0.0f;
-					state_of_robot = DRONE_ELOTT_ALLUNK;
-			}
-			break;
+
 		case DRONE_ELOTT_ALLUNK:
 			BT_UART_SendString("DRONE all\r\n");
 
@@ -380,6 +406,15 @@ void ciklus(){
 */
 			if(elulso_sharp_szenzor >= 1200){
 				state_of_robot = DRONE_FELSZALLT;
+			}
+			break;
+
+		case DRONE_KOVETKEZIK:
+			BT_UART_SendString("DRONE köv\r\n");
+			wanted_speed = (elulso_sharp_szenzor - 550)*0.00057f;
+			if(!speed_of_drogon || elulso_sharp_szenzor <= 550){
+					wanted_speed = 0.0f;
+					state_of_robot = DRONE_ELOTT_ALLUNK;
 			}
 			break;
 		case DRONE_FELSZALLT:
@@ -484,12 +519,13 @@ void ciklus(){
 /****************************************************/
 		case KORFORGALOM_KOVETKEZIK:
 			BT_UART_SendString("KÖRFORGALOM\r\n");
-			set_gyari_motor_compare_value(5800);
-/*
-			while(1){
 
-			}
-*/
+
+
+/****************************************************/
+/*Egy mód a megállásra */
+//			set_gyari_motor_compare_value(5800);
+			wanted_speed = 0.1f;
 			break;
 
 		case KORFORG_JOBBRA_1:
@@ -528,24 +564,104 @@ void ciklus(){
 /****************************************************/
 
 		case VASUTI_ATJARO_KOVETKEZIK:
-			set_gyari_motor_compare_value(5800);
-			BT_UART_SendString("HUHUHU");
-			while(1);
+			BT_UART_SendString("VAS_ÁT jel\r\n");
+
+			if(v_a_jelezs_kezdet)
+			{
+				v_a_jelzes_kezdet_encoder = get_encoder_counter();
+				v_a_jelezs_kezdet = 0;
+				set_gyari_motor_compare_value(5800);
+			} else {
+
+/*********************************************************************/
+				/* Egyik gondolatom, hogy a jelzés után a megtett távolsággal arányosan csökken a sebesség
+				 * De egyenlõre kipróbáljuk, hogy csak lecsökkentem, és a keresztvonal után állok meg
+				 *
+				 *
+				 *
+				 * */
+
+/*********************************************************************/
+				v_a_jelzes_mostani_encoder = get_encoder_counter();
+				v_a_jelzes_utan_megtett_ut = (v_a_jelzes_kezdet_encoder - v_a_jelzes_mostani_encoder)*ENCODER_VALUE_TO_MM;
+
+			}
+
+/*
+			if(meg_volt_a_kereszt_vonal){
+				wanted_speed = 0.6f;
+				if(vil_ledek_szama() == 0){
+					set_gyari_motor_compare_value(5800);
+					if(speed_of_drogon == 0.0f){
+						state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR;
+					}
+				}
+			}
+			*/
+			if(!megalltunk){
+				set_gyari_motor_compare_value(5800);
+				if(speed_of_drogon < 0.01f)
+				{
+					megalltunk = 1;
+				}
+			} else {
+
+				/*
+				if(speed_of_drogon <= 0.1f){
+					wanted_speed = 0.5f;
+				} else {
+
+				}
+	*/
+				set_gyari_motor_compare_value(6520);
+				wanted_speed = 0.5f;
+			}
+
+
+
+
+			if(vil_ledek_szama() == 0){
+				state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR;
+			}
 			break;
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR:
+			BT_UART_SendString("1. VÁR\r\n");
+			set_gyari_motor_compare_value(5800);
 			konvoj_elhaladas_felismeres();
 			break;
 
 		case VASUTI_ATJARO_EGYSZER_ATHALADTUNK:
+			BT_UART_SendString("1x ÁT\r\n");
+			wanted_speed = 0.8f;
+			if(koztes_szakasz_kezdet)
+			{
+				koztes_szakasz_kezdet = 0;
+				koztes_szak_kezdet_encoder = get_encoder_counter();
+			} else
+			{
+				koztes_szak_mostani_encoder = get_encoder_counter();
+				koztes_szak_hossz = (koztes_szak_kezdet_encoder - koztes_szak_mostani_encoder)*ENCODER_VALUE_TO_MM;
+
+				if(koztes_szak_hossz >= 1100){
+					set_gyari_motor_compare_value(5800);
+					if(speed_of_drogon == 0.0f)
+					{
+						state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA;
+					}
+				}
+			}
 			break;
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA:
+			BT_UART_SendString("2. VÁR\r\n");
+			set_gyari_motor_compare_value(5800);
 			konvoj_elhaladas_felismeres();
 			break;
 
 		case VASUTI_ATJARO_KETSZER_ATHALADTUNK:
-			konvoj_elhaladas_felismeres();
+			BT_UART_SendString("2x ÁT\r\n");
+			wanted_speed = 0.9f;
 			break;
 
 
@@ -555,7 +671,7 @@ void ciklus(){
 
 
 		case HORDO_KOVETKEZIK:
-			BT_UART_SendString("HORDÓ\r\n");
+			BT_UART_SendString("HORDÓ jel\r\n");
 			set_gyari_motor_compare_value(6200);
 			while(1){
 
@@ -589,7 +705,7 @@ void ciklus(){
 
 		} else {
 
-
+			state_of_robot = JUST_GOING;
 			if(sebesseg_szabalyzas_elore_on)
 			{
 				sebesseg_szabalyzas();
@@ -597,10 +713,12 @@ void ciklus(){
 
 		}
 
-		fal_felismeres();
-		kereszt_vonal_felismeres(vil_ledek_szama());
-		jelzes_felismeres(vonalak_szama());
-		korforgalom_jelzes_felismeres();
+			fal_felismeres();
+			kereszt_vonal_felismeres(vil_ledek_szama());
+			jelzes_felismeres(vonalak_szama());
+			korforgalom_jelzes_felismeres();
+
+
 /*******************************************/
 //Ciklus újra indítása csak a timer lejárta után történhet meg. Ezért kell nullázni,
 //hogy ha a ciklus véget is ért, a main-ben ne hívódjon meg újra, míg a timer owerflowja
@@ -751,10 +869,22 @@ void jelzes_felismeres(uint8_t vonal_szam){
 		*/
 	}
 
+
+
+	if(state_of_robot == DRONE_FELSZALLT){
+		hanyszor_volt_3_vonal = 0;
+		harmas_vonal_van = 0;
+		elobb_3_vonal_volt = 0;
+		harmas_vonal_kezdete_encoder_ertek = 0;
+		harmas_vonal_vege_encoder_ertek = 0;
+		harmas_vonal_mostani_encoder_ertek = 0;
+		harmas_vonal_hossza = 0;
+	}
+
 /***************************************************************/
 /****************** KÖRFORGALOM ************************/
 
-	if(vonal_szam == 0)
+	if(vonal_szam == 0 && vil_ledek_szama() == 0)
 	{
 		if(elobb_0_vonal_volt)
 		{
@@ -864,7 +994,7 @@ void konvoj_elhaladas_felismeres()
 {
 
 	if(!autot_erzekeltem){
-		if(elulso_sharp_szenzor <= 500){
+		if(elulso_sharp_szenzor <= 250){
 			autot_erzekeltem = 1;
 			auto_van = 1;
 			szunet_van = 0;
@@ -940,7 +1070,16 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 			if(egyes_vonal_volt_a_kereszt_utan)
 			{
 				if(kereszt_vonal_utani_egyes_hossza <= 50){
-					state_of_robot = VASUTI_ATJARO_KOVETKEZIK;
+
+					if(v_a_elso_dupla_kereszt_mar_meg_volt)
+					{
+						v_a_masodiik_dupla_kereszt_is_meg_volt = 1;
+					} else
+					{
+						state_of_robot = VASUTI_ATJARO_KOVETKEZIK;
+						v_a_elso_dupla_kereszt_mar_meg_volt = 1;
+					}
+
 				}
 			}
 			if(elobb_kereszt_vonal_volt){
@@ -962,6 +1101,16 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 		if(kereszt_vonal_van)
 		{
 
+/**********************************************************************/
+			/* Egy módja a vasúti átjáró elõtti megállásnak, hogy
+			 * A keresztvonal érzékelése után kikapcsolom a motort
+			 */
+/**********************************************************************/
+			if(state_of_robot == VASUTI_ATJARO_KOVETKEZIK){
+				meg_volt_a_kereszt_vonal = 1;
+			}
+
+
 			if(ledek_szama <= 5){
 
 				if(!egyes_vonal_volt_a_kereszt_utan)
@@ -976,7 +1125,10 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 
 					if(kereszt_vonal_utani_egyes_hossza >= 50)
 					{
-						state_of_robot = GYOZELEM;
+						if(state_of_robot == CEL_KOVETKEZIK){
+							state_of_robot = GYOZELEM;
+						}
+
 					}
 				}
 
@@ -1039,7 +1191,7 @@ void fal_felismeres(){
 		}
 	}
 
-	if(state_of_robot == UTCA_SAROK_MASODIK_FAL_JOBB){
+	if(state_of_robot == UTCA_SAROK_MASODIK_FAL_JOBB || state_of_robot == UTCA_SAROK_MASODIK_FAL_BAL ){
 
 		if(jobb_oldali_sharp_szenzor >= 300 && bal_oldali_sharp_szenzor >= 300){
 			state_of_robot = UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET;
@@ -1064,9 +1216,6 @@ void fal_felismeres(){
 					state_of_robot = KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON;
 				}
 			}
-
-
-
 		}
 
 		if(jobb_oldali_sharp_szenzor >= 300 && bal_oldali_sharp_szenzor <= 250){
