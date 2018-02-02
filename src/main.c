@@ -570,7 +570,7 @@ void ciklus(){
 
 
 
-			if(jobb_tolatas_hossz >= 1150){
+			if(jobb_tolatas_hossz >= 1350){
 //				BT_UART_SendString("A\r\n");
 				set_gyari_motor_compare_value(6200);
 				while(1);
@@ -598,7 +598,7 @@ void ciklus(){
 						BT_UART_SendString("K M V\r\n");
 						megvartuk_a_kozepet = 1;
 //						BT_UART_SendString("D\r\n");
-						set_compare_value_digit_szervo(36500);
+						set_compare_value_digit_szervo(36750);
 						set_gyari_motor_compare_value(5600);
 					}
 				}
