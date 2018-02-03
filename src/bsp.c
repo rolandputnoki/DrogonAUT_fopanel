@@ -210,6 +210,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 			kozep_ido_milisec++;
 			if(megvartuk_a_kozepet){
 				kozep_ido_milisec = 0;
+				varjuk_meg_a_kozep_erteket = 0;
 			}
 		}
 

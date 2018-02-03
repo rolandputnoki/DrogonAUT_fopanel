@@ -79,7 +79,8 @@ uint8_t vonalak_szama_a_mereskor = 0;
 
 Robot_state state_of_robot = START;
 
-float wanted_speed = 0.9f;
+//float wanted_speed = 0.9f;
+float wanted_speed = 0.5f;
 //float wanted_speed = 1.1f;
 
 
@@ -90,12 +91,13 @@ float speed_diff = 0;
 int main()
 {
 
-	KP_kormany = KP_slow;
+ 	KP_kormany = KP_slow;
 	KD_kormany = KD_slow;
 
 	// HAL_Init, System_Clock_config és hardware inicializáció
-    init_all();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             	init_all();
-    HAL_Delay(100);
+    init_all();
+    set_gyari_motor_compare_value(6200);
+    HAL_Delay(2000);
 
 
 
@@ -126,9 +128,9 @@ int main()
 			bal_oldali_sharp_szenzor = sharp_tomb_rovid[adc_eredmeny_bal];
 			ciklus();
 
-/* TODO
-			BT_UART_SendString("J:  ");
-			itoa((int)(adc_eredmeny_jobb), buffer, 10);
+/*
+			BT_UART_SendString("E:  ");
+			itoa((int)(elulso_sharp_szenzor), buffer, 10);
 			BT_UART_SendString(buffer);
 			BT_UART_SendString("   ");
 
@@ -330,6 +332,17 @@ int32_t kor_ford_hossz = 0;
 uint8_t kor_ford_most_kezd_merni = 0;
 uint8_t kor_az_elso_iv_megvolt = 0;
 /*************************************************/
+
+
+/*************************************************/
+/*                 KONVOJ segédváltozók  */
+uint8_t konvoj_kozeledes_eloszor = 1;
+int32_t konvoj_koz_kezdet_encoder_ertek = 0;
+int32_t konvoj_koz_mostani_encoder_ertek = 0;
+int32_t konvoj_koz_hossz = 0;
+
+/*************************************************/
+
 
 
 void ciklus(){
@@ -607,7 +620,7 @@ void ciklus(){
 				jobb_tolatas_hossz = (jobb_tolatas_mostani_encoder_ertek - jobb_tolatas_kezdet_encoder_ertek)*ENCODER_VALUE_TO_MM;
 			}
 
-			if(jobb_tolatas_hossz >= 1400){
+			if(jobb_tolatas_hossz >= 1450){
 				if(tolatas_veget_ert){
 					tolatas_veget_ert = 0;
 					varjuk_meg_a_kozep_erteket = 0;
@@ -687,6 +700,8 @@ void ciklus(){
 				sebesseg_szabalyzas_elore_on = 0;
 			}
 
+/*
+//A vonal végéig megyünk
 			if(vil_ledek_szama() == 0){
 				if(!arasz_nulla_led_vilagitott_elobb){
 					arasz_nulla_led_vilagitott_elobb = 1;
@@ -700,7 +715,9 @@ void ciklus(){
 				arasz_nulla_led_vilagitott_elobb = 0;
 				arasz_hanyszor_volt_nulla = 0;
 			}
+*/
 
+//Miután megálltunk
 			break;
 
 		case UTCA_SAROK_BAL_FALAS_TOLATAS:
@@ -777,16 +794,66 @@ void ciklus(){
 
 		case KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON:
 			BT_UART_SendString("KONV J\r\n");
-			set_gyari_motor_compare_value(6200);
-			while(1){
-
+			set_gyari_motor_compare_value(5600);
+			if(speed_of_drogon <= 0.01f){
+				state_of_robot = KONVOJ_JELZES_JOBB_KOZELEDES;
 			}
+
 			break;
 
 		case KONVOJ_JELZES_JOBB_KOZELEDES:
+			BT_UART_SendString("KONV J KÖZ\r\n");
+			kormany_szabalyzas_on = 0;
+			if(konvoj_kozeledes_eloszor){
+				BT_UART_SendString("ELSO K J K\r\n");
+				set_compare_value_digit_szervo(40000);
+				sebesseg_szabalyzas_elore_on = 0;
+				set_gyari_motor_compare_value(6510);
+				konvoj_kozeledes_eloszor = 0;
+				konvoj_koz_kezdet_encoder_ertek = get_encoder_counter();
+			} else {
+				konvoj_koz_mostani_encoder_ertek = get_encoder_counter();
+				konvoj_koz_hossz = (konvoj_koz_kezdet_encoder_ertek - konvoj_koz_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
+
+
+				if(konvoj_koz_hossz >= 320){
+					set_gyari_motor_compare_value(6200);
+					state_of_robot = KONVOJ_JELZES_JOBB_RAALLAS;
+				}
+			}
 			break;
 
 		case KONVOJ_JELZES_JOBB_RAALLAS:
+			BT_UART_SendString("KONV J RÁ\r\n");
+
+
+			if(elulso_sharp_szenzor <= 500){
+/*
+				while(1){
+					itoa((int)elulso_sharp_szenzor, buf10, 10);
+					BT_UART_SendString(buf10);
+					BT_UART_SendString("\r\n");
+				}
+*/
+
+
+
+				set_gyari_motor_compare_value(6520);
+				state_of_robot = KONVOJ_JELZES_JOBB_KORRE_MENET;
+				kormany_szabalyzas_on = 1;
+			}
+			break;
+
+		case KONVOJ_JELZES_JOBB_KORRE_MENET:
+
+			BT_UART_SendString("KONV J KORRE\r\n");
+			set_compare_value_digit_szervo(31500);
+
+			if(vil_ledek_szama() != 0){
+				kormany_szabalyzas_on = 1;
+				sebesseg_szabalyzas_elore_on = 1;
+				wanted_speed = 0.5f;
+			}
 
 			break;
 
@@ -876,11 +943,10 @@ void ciklus(){
 			break;
 
 		case KORFORG_JOBBRA_1:
-			set_gyari_motor_compare_value(6510);
+
 			BT_UART_SendString("K J 1\r\n");
 
-
-
+			set_gyari_motor_compare_value(6510);
 
 			if(j1_most_kezd_merni)
 			{
@@ -945,6 +1011,7 @@ void ciklus(){
 
 		case KORFORG_JOBBRA_2:
 			BT_UART_SendString("K J 2\r\n");
+			set_gyari_motor_compare_value(6510);
 
 			if(kor_ford_most_kezd_merni)
 			{
@@ -976,7 +1043,7 @@ void ciklus(){
 
 		case KORFORG_JOBBRA_3:
 			BT_UART_SendString("K J 3\r\n");
-
+			set_gyari_motor_compare_value(6510);
 			if(kor_ford_most_kezd_merni)
 			{
 				kor_ford_most_kezd_merni = 0;
@@ -1042,7 +1109,7 @@ void ciklus(){
 
 		case KORFORG_BALRA_2:
 			BT_UART_SendString("K B 2\r\n");
-
+			set_gyari_motor_compare_value(6510);
 
 			if(kor_ford_most_kezd_merni)
 			{
@@ -1075,7 +1142,7 @@ void ciklus(){
 		case KORFORG_BALRA_3:
 
 			BT_UART_SendString("K B 3\r\n");
-
+			set_gyari_motor_compare_value(6510);
 
 			if(kor_ford_most_kezd_merni)
 			{
@@ -1138,7 +1205,7 @@ void ciklus(){
 					megalltunk = 1;
 				}
 			} else {
-				set_gyari_motor_compare_value(6520);
+				set_gyari_motor_compare_value(6510);
 				wanted_speed = 0.5f;
 			}
 
@@ -1164,18 +1231,22 @@ void ciklus(){
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR:
 			BT_UART_SendString("1. VÁR\r\n");
-			set_gyari_motor_compare_value(5800);
+			set_gyari_motor_compare_value(5600);
 			itoa(elulso_sharp_szenzor, buf10, 10);
 			BT_UART_SendString(buf10);
 			BT_UART_SendString("\r\n");
+			sebesseg_szabalyzas_elore_on = 0;
 			konvoj_elhaladas_felismeres();
 			break;
 
 		case VASUTI_ATJARO_EGYSZER_ATHALADTUNK:
 			BT_UART_SendString("1x ÁT\r\n");
-			wanted_speed = 0.8f;
+//			wanted_speed = 0.8f;
+
+			sebesseg_szabalyzas_elore_on = 0;
 			if(koztes_szakasz_kezdet)
 			{
+				set_gyari_motor_compare_value(6530);
 				koztes_szakasz_kezdet = 0;
 				koztes_szak_kezdet_encoder = get_encoder_counter();
 			} else
@@ -1187,7 +1258,7 @@ void ciklus(){
 				BT_UART_SendString(buf10);
 				BT_UART_SendString("\r\n");
 				if(koztes_szak_hossz >= 1250){
-					set_gyari_motor_compare_value(5800);
+					set_gyari_motor_compare_value(5600);
 					if(speed_of_drogon == 0.0f)
 					{
 						state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA;
@@ -1198,16 +1269,26 @@ void ciklus(){
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA:
 			BT_UART_SendString("2. VÁR\r\n");
-			set_gyari_motor_compare_value(5800);
+			set_gyari_motor_compare_value(5600);
 
+
+			itoa((int)autot_erzekeltem, buf10, 10);
+			BT_UART_SendString(buf10);
+			BT_UART_SendString("\r\n");
+
+			itoa((int)varakozasi_ido, buf10, 10);
+			BT_UART_SendString(buf10);
+			BT_UART_SendString("\r\n");
 
 			konvoj_elhaladas_felismeres();
 			break;
 
 		case VASUTI_ATJARO_KETSZER_ATHALADTUNK:
+
 			BT_UART_SendString("2x ÁT\r\n");
-			wanted_speed = 0.5f;
-			/*
+			set_gyari_motor_compare_value(6510);
+			state_of_robot = JUST_GOING;
+/*
 			if(v_a_masodiik_dupla_kereszt_is_meg_volt){
 				set_gyari_motor_compare_value(5800);
 				while(1);
@@ -1223,10 +1304,11 @@ void ciklus(){
 
 		case HORDO_KOVETKEZIK:
 			BT_UART_SendString("HORDÓ jel\r\n");
-			wanted_speed = 1.4f;
 			while(1){
-
+				BT_UART_SendString("HORDÓ jel\r\n");
 			}
+			wanted_speed = 1.4f;
+
 			break;
 
 
@@ -1476,12 +1558,19 @@ void jelzes_felismeres(uint8_t vonal_szam){
 			elobb_0_vonal_volt = 0;
 			hanyszor_volt_0_vonal = 0;
 			if(nullas_vonal_hossza <= 100 && nullas_vonal_hossza >= 50){
-				if(state_of_robot != KORFORGALOM_KOVETKEZIK)
+
+/*
+				if(state_of_robot != KORFORGALOM_KOVETKEZIK || state_of_robot != VASUTI_ATJARO_KETSZER_ATHALADTUNK)
 				{
 					state_of_robot = KORFORGALOM_KOVETKEZIK;
 					korforgalom_jelzes_utani_elso_encoder_ertek = get_encoder_counter();
 				}
+*/
 
+				if(state_of_robot == JUST_GOING){
+					state_of_robot = KORFORGALOM_KOVETKEZIK;
+					korforgalom_jelzes_utani_elso_encoder_ertek = get_encoder_counter();
+				}
 			}
 			nullas_vonal_hossza = 0;
 		}
@@ -1554,7 +1643,7 @@ void konvoj_elhaladas_felismeres()
 {
 
 	if(!autot_erzekeltem){
-		if(elulso_sharp_szenzor <= 250){
+		if(elulso_sharp_szenzor <= 450){
 			autot_erzekeltem = 1;
 			auto_van = 1;
 			szunet_van = 0;
@@ -1581,8 +1670,8 @@ void konvoj_elhaladas_felismeres()
 	if(state_of_robot == VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR){
 		if(varakozasi_ido >= 2000){
 			state_of_robot = VASUTI_ATJARO_EGYSZER_ATHALADTUNK;
-			varakozasi_ido = 0;
 			autot_erzekeltem = 0;
+			varakozasi_ido = 0;
 			auto_van = 0;
 			szunet_van = 0;
 			szunet_szam = 0;
@@ -1717,14 +1806,25 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 
 			if(egyes_vonal_volt_a_kereszt_utan)
 			{
+				BT_UART_SendString("Ker\r\n");
 				if(kereszt_vonal_utani_egyes_hossza <= 50){
 
+					BT_UART_SendString("Rek\r\n");
 					if(v_a_elso_dupla_kereszt_mar_meg_volt)
 					{
+						BT_UART_SendString("2. D K\r\n");
 						v_a_masodiik_dupla_kereszt_is_meg_volt = 1;
 					} else
 					{
 						state_of_robot = VASUTI_ATJARO_KOVETKEZIK;
+						hanyszor_volt_kereszt_vonal = 0;
+						kereszt_vonal_van = 0;
+						elobb_kereszt_vonal_volt = 0;
+						kereszt_vonal_utani_egyes_kezdete_encoder_ertek = 0;
+						kereszt_vonal_utani_egyes_vege_encoder_ertek = 0;
+						kereszt_vonal_utani_egyes_mostani_encoder_ertek = 0;
+						kereszt_vonal_utani_egyes_hossza = 0;
+						egyes_vonal_volt_a_kereszt_utan = 0;
 						v_a_elso_dupla_kereszt_mar_meg_volt = 1;
 					}
 
@@ -1850,7 +1950,7 @@ void fal_felismeres(){
 				jobb_oldali_fal_mostani_encoder_ertek = get_encoder_counter();
 				jobb_oldali_fal_hossza = (jobb_oldali_fal_kezdete_encoder_ertek - jobb_oldali_fal_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
-				if(jobb_oldali_fal_hossza >= 50){
+				if(jobb_oldali_fal_hossza >= 40){
 					state_of_robot = KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON;
 				}
 			}
@@ -1907,6 +2007,7 @@ void korforgalom_jelzes_felismeres()
 			break;
 
 		default:
+			BT_UART_SendString("N M K\r\n");
 			break;
 
 		}
@@ -1980,4 +2081,8 @@ void sebesseg_szabalyzas(){
 	sebesseg_tarto_counter++;
 	}
 }
+
+
+
+
 

@@ -232,7 +232,10 @@ uint8_t space_counter = 0;
 char command_buffer[20];
 char command_buffer_sorszam[150];
 
-uint8_t meg_jott_a_start_kapu_jele = 0;
+//uint8_t meg_jott_a_start_kapu_jele = 0;
+
+uint8_t meg_jott_a_start_kapu_jele = 1;
+
 uint8_t elso_indulas = 1;
 /** Callback függvény, mely sikeres adatfogadás végét jelzi. */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
@@ -286,12 +289,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 					comma_received = 0;
 
 					if(space_counter == 1){
+						meg_jott_a_start_kapu_jele = 1;
+
+/*
 						uint8_t valami1 = 0;
 						sscanf(command_buffer, "%u %u", &motor_value,valami1);
 						set_gyari_motor_compare_value(motor_value);
 						for(uint8_t j = 0; j<20; j++){
 							command_buffer[j] = 0;
 						}
+
+						*/
 					}
 					else if(space_counter == 2){
 						uint8_t valami1, valami2;
