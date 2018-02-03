@@ -20,7 +20,7 @@ extern uint16_t start_milisec_szamlalo = 0;
 
 /***********************************/
 /* Utcasarok tolatas */
-extern uint16_t kozep_ido_milisec = 0;;
+extern uint16_t kozep_ido_milisec = 0;
 extern uint16_t hatra_ido_milisec = 0;
 extern uint8_t varjuk_meg_a_kozep_erteket = 0;
 extern uint8_t megvartuk_a_kozepet = 0;

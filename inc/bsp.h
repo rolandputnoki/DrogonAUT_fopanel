@@ -55,31 +55,57 @@ typedef enum {
 	START = 2,
 	JUST_GOING = 3,
 
+
+/****************************************************/
+			/* HORDÓ ÁLLAPOTAI */
+/****************************************************/
+
 	HORDO_KOVETKEZIK = 4,
+
+
+/****************************************************/
+			/* UTCASAROK ÁLLAPOTAI */
+/****************************************************/
+
 	UTCA_SAROK_DUPLA_FAL = 5,
 	UTCA_SAROK_MASODIK_FAL_JOBB = 6,
 	UTCA_SAROK_MASODIK_FAL_BAL = 7,
 	UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET = 8,
 	UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET = 9,
-	UTCA_SAROK_JOBB_FALAS_TOLATAS = 10,
-	UTCA_SAROK_BAL_FALAS_TOLATAS = 11,
+
 	UTCA_SAROK_JOBB_ARASZOLAS = 34,
+	UTCA_SAROK_JOBB_FALAS_TOLATAS = 10,
+	UTCA_SAROK_JOBB_TOLATAS_VEGE = 36,
+
+
 	UTCA_SAROK_BAL_ARASZOLAS = 35,
+	UTCA_SAROK_BAL_FALAS_TOLATAS = 11,
+	UTCA_SAROK_BAL_TOLATAS_VEGE = 37,
 
-
-
-
-	GYORSIT = 12,
-	LASSIT = 13,
+/****************************************************/
+			/* DRÓN ÁLLAPOTAI */
+/****************************************************/
 	DRONE_KOVETKEZIK = 14,
 	DRONE_ELOTT_ALLUNK = 15,
 	DRONE_FELSZALLT = 16,
 
+/****************************************************/
+			/* KONVOJ ÁLLAPOTAI */
+/****************************************************/
+
 	KONVOJ_KOVETKEZIK_JELZES_A_BAL_OLDALON = 17,
+	KONVOJ_JELZES_BAL_KOZELEDES = 40,
+	KONVOJ_JELZES_BAL_RAALLAS = 39,
+
+
 	KONVOJ_KOVETKEZIK_JELZES_A_JOBB_OLDALON = 18,
+	KONVOJ_JELZES_JOBB_KOZELEDES = 42,
+	KONVOJ_JELZES_JOBB_RAALLAS = 38,
 
 
-
+/****************************************************/
+			/* KÖRFORGALOM ÁLLAPOTAI */
+/****************************************************/
 	KORFORGALOM_KOVETKEZIK = 19,
 	KORFORGALOM_MEGALLTUNK = 20,
 	KORFORG_JOBBRA_1 = 21,
@@ -90,13 +116,19 @@ typedef enum {
 	KORFORG_BALRA_3 = 26,
 
 
-
-	GYOZELEM = 27,
+/****************************************************/
+			/* VASÚTI ÁTJÁRÓ ÁLLAPOTAI */
+/****************************************************/
 	VASUTI_ATJARO_KOVETKEZIK = 28,
 	VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR = 29,
 	VASUTI_ATJARO_EGYSZER_ATHALADTUNK = 30,
 	VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA = 31,
 	VASUTI_ATJARO_KETSZER_ATHALADTUNK = 32,
+
+
+	GYOZELEM = 27,
+	GYORSIT = 12,
+	LASSIT = 13,
 	CEL_KOVETKEZIK = 33
 
 } Robot_state;
