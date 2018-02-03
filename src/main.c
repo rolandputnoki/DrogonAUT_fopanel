@@ -838,8 +838,9 @@ void ciklus(){
 
 
 
-				set_gyari_motor_compare_value(6520);
+				set_gyari_motor_compare_value(6530);
 				state_of_robot = KONVOJ_JELZES_JOBB_KORRE_MENET;
+				set_compare_value_digit_szervo(32500);
 				kormany_szabalyzas_on = 1;
 			}
 			break;
@@ -847,10 +848,12 @@ void ciklus(){
 		case KONVOJ_JELZES_JOBB_KORRE_MENET:
 
 			BT_UART_SendString("KONV J KORRE\r\n");
-			set_compare_value_digit_szervo(31500);
+
 
 			if(vil_ledek_szama() != 0){
-				kormany_szabalyzas_on = 1;
+
+				BT_UART_SendString("KORM ON\r\n");
+//				kormany_szabalyzas_on = 1;
 				sebesseg_szabalyzas_elore_on = 1;
 				wanted_speed = 0.5f;
 			}
