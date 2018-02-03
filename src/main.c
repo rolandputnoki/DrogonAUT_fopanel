@@ -280,8 +280,55 @@ uint8_t v_a_masodiik_dupla_kereszt_is_meg_volt = 0;
 
 
 uint8_t nulla_led_vilagitott_elobb = 0;
+uint8_t elobb_nulla_led_volt = 0;
 uint8_t hanyszor_volt_nulla = 0;
 uint8_t most_nulla = 0;
+/*************************************************/
+
+
+/*************************************************/
+/*   KÖRFORGALOM segédváltozók  */
+int32_t elozo_encoder_ertek = 0;
+int32_t mostani_encoder_ertek = 0;
+uint8_t mar_lementem_a_vonalrol = 0;
+uint8_t korforg_hanyszor_volt_nulla = 0;
+uint8_t korforg_elobb_nulla_led_volt = 0;
+uint8_t korforg_null_led_van = 0;
+uint8_t korforg_megalltunk = 0;
+uint8_t infra_inicializalva = 0;
+
+int32_t korforgalom_jelzes_utani_elso_encoder_ertek = 0;
+int32_t korforg_jel_utani_mostani_encoder_ertek = 0;
+int32_t korforg_jel_utani_hossz = 0;
+
+/*          JOBBRA 1                   */
+int32_t j1_kezdet_encoder_ertek = 0;
+int32_t j1_mostani_encoder_ertek = 0;
+uint8_t j1_most_kezd_merni = 1;
+int32_t j1_hossz = 0;
+
+/*          JOBBRA 2                   */
+
+
+
+
+/*          JOBBRA 3                   */
+
+/*          BALRA 1                   */
+int32_t b1_kezdet_encoder_ertek = 0;
+int32_t b1_mostani_encoder_ertek = 0;
+uint8_t b1_most_kezd_merni = 1;
+int32_t b1_hossz = 0;
+
+
+
+
+/*   Fix ívek amiken fordulunk  */
+int32_t kor_ford_kezdet_encoder_ertek = 0;
+int32_t kor_ford_mostani_encoder_ertek = 0;
+int32_t kor_ford_hossz = 0;
+uint8_t kor_ford_most_kezd_merni = 0;
+uint8_t kor_az_elso_iv_megvolt = 0;
 /*************************************************/
 
 
@@ -519,8 +566,9 @@ void ciklus(){
 				BT_UART_SendString("\r\n");
 
 */
-				set_gyari_motor_compare_value(6520);
-				wanted_speed = 0.5f;
+				set_gyari_motor_compare_value(6510);
+//				wanted_speed = 0.5f;
+				sebesseg_szabalyzas_elore_on = 0;
 			}
 
 			if(vil_ledek_szama() == 0){
@@ -559,7 +607,7 @@ void ciklus(){
 				jobb_tolatas_hossz = (jobb_tolatas_mostani_encoder_ertek - jobb_tolatas_kezdet_encoder_ertek)*ENCODER_VALUE_TO_MM;
 			}
 
-			if(jobb_tolatas_hossz >= 1350){
+			if(jobb_tolatas_hossz >= 1400){
 				if(tolatas_veget_ert){
 					tolatas_veget_ert = 0;
 					varjuk_meg_a_kozep_erteket = 0;
@@ -628,14 +676,15 @@ void ciklus(){
 			BT_UART_SendString("B ARASZ\r\n");
 
 			if(!utca_sarok_megalltunk){
-				set_gyari_motor_compare_value(5800);
+				set_gyari_motor_compare_value(5600);
 				if(speed_of_drogon < 0.01f)
 				{
 					utca_sarok_megalltunk = 1;
 				}
 			} else {
-				set_gyari_motor_compare_value(6520);
-				wanted_speed = 0.5f;
+				set_gyari_motor_compare_value(6510);
+//				wanted_speed = 0.5f;
+				sebesseg_szabalyzas_elore_on = 0;
 			}
 
 			if(vil_ledek_szama() == 0){
@@ -659,8 +708,7 @@ void ciklus(){
 //TODO BT
 			BT_UART_SendString("B TOLAT\r\n");
 			if(eloszor_van_bal_tolatas) {
-				set_gyari_motor_compare_value(5800);
-				integrator_ertek = 200;
+				set_gyari_motor_compare_value(5600);
 				eloszor_van_bal_tolatas = 0;
 				bal_tolatas_kezdet_encoder_ertek = get_encoder_counter();
 			} else {
@@ -689,7 +737,7 @@ void ciklus(){
 					if(!varjuk_meg_a_hatra_erteket)
 					{
 						varjuk_meg_a_hatra_erteket = 1;
-						set_gyari_motor_compare_value(5800);
+						set_gyari_motor_compare_value(5600);
 					} else {
 						if(hatra_ido_milisec >= 300)
 						{
@@ -762,44 +810,298 @@ void ciklus(){
 			/* KÖRFORGALOM ÁLLAPOTAI */
 /****************************************************/
 		case KORFORGALOM_KOVETKEZIK:
-			BT_UART_SendString("KÖRFORGALOM\r\n");
-			korforgalom_jelzes_felismeres();
+			BT_UART_SendString("KÖRFO\r\n");
 
+			korforg_jel_utani_mostani_encoder_ertek = get_encoder_counter();
+			korforg_jel_utani_hossz = (korforgalom_jelzes_utani_elso_encoder_ertek - korforg_jel_utani_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
+			if(!infra_inicializalva){
+				init_infra_timer();
+				infra_inicializalva = 1;
+			}
+
+			if(!megalltunk){
+				set_gyari_motor_compare_value(5600);
+				mostani_encoder_ertek = get_encoder_counter();
+
+				if(mostani_encoder_ertek == elozo_encoder_ertek){
+					megalltunk = 1;
+				}
+				elozo_encoder_ertek = mostani_encoder_ertek;
+			} else {
+/*			 Elsõ sharp alapján közeltjük meg a körforgalmat.
+				if(elulso_sharp_szenzor >= 550){
+					set_gyari_motor_compare_value(6510);
+
+					itoa(elulso_sharp_szenzor, buf10, 10);
+					BT_UART_SendString(buf10);
+					BT_UART_SendString("MESSZE\r\n");
+				} else {
+					set_gyari_motor_compare_value(5600);
+					mostani_encoder_ertek = get_encoder_counter();
+
+					if(mostani_encoder_ertek == elozo_encoder_ertek){
+						korforgalom_jelzes_felismeres();
+					}
+					elozo_encoder_ertek = mostani_encoder_ertek;
+				}
+				
+*/
+
+/* Megtett távolság alapján közelítjük a körforgalmat*/
+				if(korforg_jel_utani_hossz <= 440){
+					set_gyari_motor_compare_value(6510);
+/*
+					itoa(elulso_sharp_szenzor, buf10, 10);
+					BT_UART_SendString(buf10);
+					BT_UART_SendString("MESSZE\r\n");
+
+					*/
+				} else {
+					set_gyari_motor_compare_value(5600);
+					mostani_encoder_ertek = get_encoder_counter();
+
+					if(mostani_encoder_ertek == elozo_encoder_ertek){
+						BT_UART_SendString("JEL F ISM\r\n");
+						korforgalom_jelzes_felismeres();
+					}
+					elozo_encoder_ertek = mostani_encoder_ertek;
+				}
+			}
 
 /****************************************************/
 /*Egy mód a megállásra */
-//			set_gyari_motor_compare_value(5800);
-			wanted_speed = 0.1f;
+
+			sebesseg_szabalyzas_elore_on = 0;
+//			wanted_speed = 0.0f;
 			break;
 
 		case KORFORG_JOBBRA_1:
-			set_gyari_motor_compare_value(5800);
+			set_gyari_motor_compare_value(6510);
 			BT_UART_SendString("K J 1\r\n");
+
+
+
+
+			if(j1_most_kezd_merni)
+			{
+				j1_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(26600);
+				kormany_szabalyzas_on = 0;
+				j1_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+				j1_mostani_encoder_ertek = get_encoder_counter();
+				j1_hossz = (j1_kezdet_encoder_ertek - j1_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(j1_hossz >= 500){
+
+					if(kormany_szabalyzas_on){
+
+					} else {
+						set_compare_value_digit_szervo(32500);
+					}
+
+				}
+				if(j1_hossz >= 700){
+					kormany_szabalyzas_on = 1;
+					BT_UART_SendString("KORM ON\r\n");
+				}
+			}
+
+/*
+			if(vil_ledek_szama() == 0)
+			{
+				if(!korforg_elobb_nulla_led_volt)
+				{
+					korforg_elobb_nulla_led_volt = 1;
+				} else
+				{
+					korforg_hanyszor_volt_nulla++;
+					if(korforg_hanyszor_volt_nulla >= 3)
+					{
+						state_of_robot = KORFORG_JOBBRA_1_LENT_A_VONALROL;
+					}
+				}
+			} else {
+				korforg_elobb_nulla_led_volt = 0;
+				korforg_hanyszor_volt_nulla = 0;
+			}
+*/
+
+
+			break;
+
+
+		case KORFORG_JOBBRA_1_LENT_A_VONALROL:
+		
+			BT_UART_SendString("K J 1 L V\r\n");
+
+			if(vil_ledek_szama() == 0){
+
+			} else {
+				kormany_szabalyzas_on = 1;
+			}
+
 			break;
 
 		case KORFORG_JOBBRA_2:
-			set_gyari_motor_compare_value(5800);
 			BT_UART_SendString("K J 2\r\n");
+
+			if(kor_ford_most_kezd_merni)
+			{
+				kor_ford_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(26600);
+				kormany_szabalyzas_on = 0;
+				kor_ford_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+
+				kor_ford_mostani_encoder_ertek = get_encoder_counter();
+				kor_ford_hossz = (kor_ford_kezdet_encoder_ertek - kor_ford_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(!kor_az_elso_iv_megvolt)
+				{
+					if(kor_ford_hossz >= 500){
+						kor_az_elso_iv_megvolt = 1;
+					}
+				} else {
+					if(kor_ford_hossz >= 1000){
+						kormany_szabalyzas_on = 1;
+					} else {
+						set_compare_value_digit_szervo(36600);
+					}
+				}
+
+			}
+
 			break;
 
 		case KORFORG_JOBBRA_3:
-			set_gyari_motor_compare_value(5800);
 			BT_UART_SendString("K J 3\r\n");
+
+			if(kor_ford_most_kezd_merni)
+			{
+				kor_ford_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(26600);
+				kormany_szabalyzas_on = 0;
+				kor_ford_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+
+				kor_ford_mostani_encoder_ertek = get_encoder_counter();
+				kor_ford_hossz = (kor_ford_kezdet_encoder_ertek - kor_ford_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(!kor_az_elso_iv_megvolt)
+				{
+					if(kor_ford_hossz >= 500){
+						kor_az_elso_iv_megvolt = 1;
+					}
+				} else {
+					if(kor_ford_hossz >= 1500){
+						kormany_szabalyzas_on = 1;
+					} else {
+						set_compare_value_digit_szervo(36600);
+					}
+				}
+
+			}
 			break;
 
 		case KORFORG_BALRA_1:
-			set_gyari_motor_compare_value(5800);
+
 			BT_UART_SendString("K B 1\r\n");
+
+			set_gyari_motor_compare_value(6510);
+
+
+
+
+
+			if(b1_most_kezd_merni)
+			{
+				b1_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(36600);
+				kormany_szabalyzas_on = 0;
+				b1_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+				b1_mostani_encoder_ertek = get_encoder_counter();
+				b1_hossz = (b1_kezdet_encoder_ertek - b1_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(b1_hossz >= 500){
+
+					if(kormany_szabalyzas_on){
+
+					} else {
+						set_compare_value_digit_szervo(32500);
+					}
+
+				}
+				if(b1_hossz >= 700){
+					kormany_szabalyzas_on = 1;
+					BT_UART_SendString("KORM ON\r\n");
+				}
+			}
 			break;
 
 		case KORFORG_BALRA_2:
-			set_gyari_motor_compare_value(5800);
 			BT_UART_SendString("K B 2\r\n");
+
+
+			if(kor_ford_most_kezd_merni)
+			{
+				kor_ford_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(36600);
+				kormany_szabalyzas_on = 0;
+				kor_ford_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+
+				kor_ford_mostani_encoder_ertek = get_encoder_counter();
+				kor_ford_hossz = (kor_ford_kezdet_encoder_ertek - kor_ford_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(!kor_az_elso_iv_megvolt)
+				{
+					if(kor_ford_hossz >= 500){
+						kor_az_elso_iv_megvolt = 1;
+					}
+				} else {
+					if(kor_ford_hossz >= 1000){
+						kormany_szabalyzas_on = 1;
+					} else {
+						set_compare_value_digit_szervo(26600);
+					}
+				}
+
+			}
+
 			break;
 
 		case KORFORG_BALRA_3:
-			set_gyari_motor_compare_value(5800);
+
 			BT_UART_SendString("K B 3\r\n");
+
+
+			if(kor_ford_most_kezd_merni)
+			{
+				kor_ford_most_kezd_merni = 0;
+				set_compare_value_digit_szervo(36600);
+				kormany_szabalyzas_on = 0;
+				kor_ford_kezdet_encoder_ertek = get_encoder_counter();
+
+			} else {
+
+				kor_ford_mostani_encoder_ertek = get_encoder_counter();
+				kor_ford_hossz = (kor_ford_kezdet_encoder_ertek - kor_ford_mostani_encoder_ertek )*ENCODER_VALUE_TO_MM;
+				if(!kor_az_elso_iv_megvolt)
+				{
+					if(kor_ford_hossz >= 500){
+						kor_az_elso_iv_megvolt = 1;
+					}
+				} else {
+					if(kor_ford_hossz >= 1500){
+						kormany_szabalyzas_on = 1;
+					} else {
+						set_compare_value_digit_szervo(26600);
+					}
+				}
+
+			}
 			break;
 
 
@@ -1174,8 +1476,14 @@ void jelzes_felismeres(uint8_t vonal_szam){
 			elobb_0_vonal_volt = 0;
 			hanyszor_volt_0_vonal = 0;
 			if(nullas_vonal_hossza <= 100 && nullas_vonal_hossza >= 50){
-				state_of_robot = KORFORGALOM_KOVETKEZIK;
+				if(state_of_robot != KORFORGALOM_KOVETKEZIK)
+				{
+					state_of_robot = KORFORGALOM_KOVETKEZIK;
+					korforgalom_jelzes_utani_elso_encoder_ertek = get_encoder_counter();
+				}
+
 			}
+			nullas_vonal_hossza = 0;
 		}
 	}
 
@@ -1571,6 +1879,7 @@ void fal_felismeres(){
 void korforgalom_jelzes_felismeres()
 {
 	if(korforgalom_cim_stimmel){
+
 		switch(korforgalom_uzenet){
 
 		case JOBBRA_ELSO:

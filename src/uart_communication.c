@@ -339,6 +339,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *handle)
 
 		if(elso_indulas){
 			lastReceivedNumber = rr_rxBuffer;
+
+			BT_UART_SendString("R: ");
+			char buf100[4];
+			itoa(lastReceivedNumber, buf100, 10);
+			BT_UART_SendString(buf100);
+			BT_UART_SendString("\r\n");
+
 			if(lastReceivedNumber == '0'){
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 				meg_jott_a_start_kapu_jele = 1;

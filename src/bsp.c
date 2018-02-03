@@ -106,7 +106,7 @@ void init_all(){
 
 	//Infra vevõ
 	init_infra_rev_pin();
-	init_infra_timer();
+//	init_infra_timer();
 
 	Set_LMS6DS3_correction_values();
 }
