@@ -816,7 +816,7 @@ void ciklus(){
 				konvoj_koz_hossz = (konvoj_koz_kezdet_encoder_ertek - konvoj_koz_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
 
-				if(konvoj_koz_hossz >= 320){
+				if(konvoj_koz_hossz >= 400){
 					set_gyari_motor_compare_value(6200);
 					state_of_robot = KONVOJ_JELZES_JOBB_RAALLAS;
 				}
