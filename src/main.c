@@ -11,7 +11,7 @@
 #include "sharp_hosszu.h"
 #include "sharp_rovid.h"
 
-uint8_t teszt_helyzet = 1;
+uint8_t teszt_helyzet = 0;
 
 //SPI1
 SPI_HandleTypeDef spi;
@@ -109,6 +109,8 @@ int main()
 	HAL_ADC_Start_DMA(&hadc2, &adc_eredmeny_elso, (uint32_t)1);
 	HAL_ADC_Start_DMA(&hadc3, &adc_eredmeny_jobb, (uint32_t)1);
 
+
+
 	while(1)
 	{
 
@@ -122,8 +124,6 @@ int main()
 
 */
 
-
-
 		if(new_cycle)
 		{
 			elulso_sharp_szenzor = sharp_tomb_hosszu[adc_eredmeny_elso];
@@ -131,13 +131,13 @@ int main()
 			bal_oldali_sharp_szenzor = sharp_tomb_rovid[adc_eredmeny_bal];
 			ciklus();
 
-/*
-			BT_UART_SendString("E:  ");
-			itoa((int)(elulso_sharp_szenzor), buffer, 10);
+
+//			BT_UART_SendString("E:  ");
+			itoa((int)(meg_jott_a_start_kapu_jele), buffer, 10);
 			BT_UART_SendString(buffer);
 			BT_UART_SendString("   ");
 
-
+/*
 			itoa((int)(jobb_oldali_sharp_szenzor), buffer, 10);
 			BT_UART_SendString(buffer);
 
@@ -400,6 +400,13 @@ void ciklus(){
 /****************************************************************/
 		/* Itt kell még módosítani az adcAdatokon, ha tolatni akarunk  */
 /****************************************************************/
+		if(state_of_robot == UTCA_SAROK_JOBB_TOLATAS_VEGE){
+			utca_sarok_jobb_elofeldolgozas();
+		} else if(state_of_robot == UTCA_SAROK_BAL_TOLATAS_VEGE)
+		{
+			utca_sarok_bal_elofeldolgozas();
+		}
+
 
 
 		//arányos tényezõ számítása
@@ -552,9 +559,13 @@ void ciklus(){
 
 		case UTCA_SAROK_DUPLA_FAL:
 
+
 			if(teszt_helyzet){
 				BT_UART_SendString("DUPLA FAL\r\n");
 			}
+
+
+			fal_felismeres();
 
 			wanted_speed = 0.8f;
 			break;
@@ -564,6 +575,7 @@ void ciklus(){
 			{
 				BT_UART_SendString("DUPLA FAL U SZ\r\n");
 			}
+			fal_felismeres();
 			break;
 
 		case UTCA_SAROK_MASODIK_FAL_JOBB:
@@ -1482,7 +1494,10 @@ void ciklus(){
 
 
 			set_gyari_motor_compare_value(6510);
-			state_of_robot = JUST_GOING;
+
+			kereszt_vonal_felismeres(vil_ledek_szama());
+
+//			state_of_robot = JUST_GOING;
 /*
 			if(v_a_masodiik_dupla_kereszt_is_meg_volt){
 				set_gyari_motor_compare_value(5800);
@@ -1535,6 +1550,10 @@ void ciklus(){
 				BT_UART_SendString("CSILL\r\n");
 			}
 
+			fal_felismeres();
+			kereszt_vonal_felismeres(vil_ledek_szama());
+			jelzes_felismeres(vonalak_szama());
+
 			break;
 
 		default:
@@ -1548,6 +1567,12 @@ void ciklus(){
 /************************************************************************/
 
 		if(!meg_jott_a_start_kapu_jele){
+			if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_SET)
+			{
+				meg_jott_a_start_kapu_jele = 0;
+			} else {
+				meg_jott_a_start_kapu_jele = 1;
+			}
 
 		} else {
 
@@ -1557,9 +1582,7 @@ void ciklus(){
 			}
 
 		}
-//			fal_felismeres();
-			kereszt_vonal_felismeres(vil_ledek_szama());
-			jelzes_felismeres(vonalak_szama());
+
 
 
 
@@ -2013,8 +2036,6 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 
 	if(ledek_szama >= 30)
 		{
-
-
 			if(egyes_vonal_volt_a_kereszt_utan)
 			{
 				BT_UART_SendString("Ker\r\n");
@@ -2025,6 +2046,7 @@ void kereszt_vonal_felismeres(uint8_t ledek_szama)
 					{
 						BT_UART_SendString("2. D K\r\n");
 						v_a_masodiik_dupla_kereszt_is_meg_volt = 1;
+						state_of_robot = JUST_GOING;
 					} else
 					{
 						state_of_robot = VASUTI_ATJARO_KOVETKEZIK;
@@ -2109,20 +2131,43 @@ int32_t bal_oldali_fal_kezdete_encoder_ertek;
 int32_t bal_oldali_fal_mostani_encoder_ertek;
 int32_t bal_oldali_fal_hossza = 0;
 
+uint8_t hanyszor_lattam_dupla_falat = 0;
+uint8_t elobb_dupla_fal_volt = 0;
+
 /**************************************************************/
 
 void fal_felismeres(){
 
-
+//Lekezelve: JUST_GOING állapotban futhat le
 	if(meg_nem_volt_utca_sarok_elso_fal){
 		if(jobb_oldali_sharp_szenzor <= 250 && bal_oldali_sharp_szenzor <= 250)
 		{
-			state_of_robot = UTCA_SAROK_DUPLA_FAL;
-			meg_nem_volt_utca_sarok_elso_fal = 0;
+
+			if(!elobb_dupla_fal_volt)
+			{
+				elobb_dupla_fal_volt = 1;
+			} else {
+				hanyszor_lattam_dupla_falat++;
+			}
+
+			if(hanyszor_lattam_dupla_falat >= 4)
+			{
+				state_of_robot = UTCA_SAROK_DUPLA_FAL;
+
+				elobb_dupla_fal_volt = 0;
+				hanyszor_lattam_dupla_falat = 0;
+				meg_nem_volt_utca_sarok_elso_fal = 0;
+			}
+
+
+		}
+		else {
+			elobb_dupla_fal_volt = 0;
+			hanyszor_lattam_dupla_falat = 0;
 		}
 	}
 
-
+//Lekezelve: Egyértelmû mikor futhat
 	if(state_of_robot == UTCA_SAROK_DUPLA_FAL)
 	{
 
@@ -2131,6 +2176,7 @@ void fal_felismeres(){
 		}
 	}
 
+//Lekezelve: Egyértelmû mikor futhat
 	if(state_of_robot == UTCA_SAROK_DUPLA_FAL_UTANI_SZUNET)
 	{
 		if(jobb_oldali_sharp_szenzor <= 250 && bal_oldali_sharp_szenzor >= 300){
@@ -2141,14 +2187,18 @@ void fal_felismeres(){
 			state_of_robot = UTCA_SAROK_MASODIK_FAL_BAL;
 		}
 	}
-
+/* Nem használt
 	if(state_of_robot == UTCA_SAROK_MASODIK_FAL_JOBB || state_of_robot == UTCA_SAROK_MASODIK_FAL_BAL ){
 
 		if(jobb_oldali_sharp_szenzor >= 300 && bal_oldali_sharp_szenzor >= 300){
 //			state_of_robot = UTCA_SAROK_MASODIK_FAL_UTANI_SZUNET;
 		}
 	}
+*/
 
+
+
+//Lekezelve: Egyértelmû mikor futhat
 	if(state_of_robot == JUST_GOING)
 	{
 		if(jobb_oldali_sharp_szenzor <= 250 && bal_oldali_sharp_szenzor >= 300){
@@ -2293,7 +2343,59 @@ void sebesseg_szabalyzas(){
 	}
 }
 
+void utca_sarok_jobb_elofeldolgozas(){
+	uint8_t csucs_kezdete = 0;
+	uint8_t cnt = 0;
+	uint8_t m;
+	uint8_t egy_gyucsot_talaltam = 0;
+	for(m = 0; m < 32; m++){
+
+		if(!egy_gyucsot_talaltam)
+		{
+			if(!csucs_kezdete){
+				if(adcAdatok_elso[m] != 0){
+					csucs_kezdete = 1;
+
+				}
+			} else {
+				if(adcAdatok_elso[m] == 0){
+					egy_gyucsot_talaltam = 1;
+				}
+			}
+		} else
+		{
+			adcAdatok_elso[m] = 0;
+		}
+
+	}
+}
 
 
+void utca_sarok_bal_elofeldolgozas(){
+	uint8_t csucs_kezdete = 0;
+	uint8_t cnt = 0;
+	uint8_t m;
+	uint8_t egy_gyucsot_talaltam = 0;
+	for(m = 31; m >= 0; m--){
+
+		if(!egy_gyucsot_talaltam)
+		{
+			if(!csucs_kezdete){
+				if(adcAdatok_elso[m] != 0){
+					csucs_kezdete = 1;
+
+				}
+			} else {
+				if(adcAdatok_elso[m] == 0){
+					egy_gyucsot_talaltam = 1;
+				}
+			}
+		} else
+		{
+			adcAdatok_elso[m] = 0;
+		}
+
+	}
+}
 
 

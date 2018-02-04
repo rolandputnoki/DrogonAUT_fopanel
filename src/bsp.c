@@ -109,6 +109,9 @@ void init_all(){
 //	init_infra_timer();
 
 	Set_LMS6DS3_correction_values();
+
+
+	init_dip_kapcsolo();
 }
 
 void init_cuklus_timer(void)
@@ -281,6 +284,17 @@ void init_user_button(void)
 	__GPIOC_CLK_ENABLE();
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.Pin = GPIO_PIN_13;
+	GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	GPIO_InitStructure.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+}
+
+void init_dip_kapcsolo(void)
+{
+	__GPIOC_CLK_ENABLE();
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.Pin = GPIO_PIN_15;
 	GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
 	GPIO_InitStructure.Pull = GPIO_NOPULL;

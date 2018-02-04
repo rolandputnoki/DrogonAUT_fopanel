@@ -234,7 +234,7 @@ char command_buffer_sorszam[150];
 
 //uint8_t meg_jott_a_start_kapu_jele = 0;
 
-uint8_t meg_jott_a_start_kapu_jele = 1;
+uint8_t meg_jott_a_start_kapu_jele = 0;
 
 uint8_t elso_indulas = 1;
 /** Callback függvény, mely sikeres adatfogadás végét jelzi. */
