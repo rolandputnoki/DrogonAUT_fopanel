@@ -80,7 +80,7 @@ typedef enum {
 
 	UTCA_SAROK_BAL_ARASZOLAS = 35,
 	UTCA_SAROK_BAL_FALAS_TOLATAS = 11,
-	UTCA_SAROK_BAL_TOLATAS_VEGE = 37,
+	UTCA_SAROK_BAL_TOLATAS_VEGE = 50,
 
 /****************************************************/
 			/* DRÓN ÁLLAPOTAI */
