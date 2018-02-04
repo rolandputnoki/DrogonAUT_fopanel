@@ -280,16 +280,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 //						uint8_t uzenet_cim = bits_in_message[8]*8 + bits_in_message[10]*4 + bits_in_message[12]*2 + bits_in_message[14]*1;
 						if((bits_in_message[8]*8 + bits_in_message[10]*4 + bits_in_message[12]*2 + bits_in_message[14]*1) == 13){
 							korforgalom_cim_stimmel = 1;
-
+							HAL_NVIC_DisableIRQ(TIM3_IRQn);
 						}
 
 
 						//Teszthez
-
+/*
 						char buffferem[6];
 						itoa(korforgalom_uzenet, buffferem, 10);
 						BT_UART_SendString(buffferem);
-
+*/
 
 						bit_counter = 0;
 						first_edge = 1;
