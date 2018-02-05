@@ -102,6 +102,7 @@ typedef enum {
 	KONVOJ_JELZES_JOBB_KOZELEDES = 42,
 	KONVOJ_JELZES_JOBB_RAALLAS = 38,
 	KONVOJ_JELZES_JOBB_KORRE_MENET = 49,
+	KONVOJ_JELZES_JOBB_KOVETES = 51,
 
 
 /****************************************************/
