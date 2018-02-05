@@ -379,6 +379,9 @@ uint8_t hanyszor_volt_nulla_led = 0;
 uint8_t nem_nulla_led_volt = 0;
 uint8_t hanyszor_volt_nem_nulla_led = 0;
 
+uint8_t konv_elso_iven = 1;
+uint8_t konv_masodik_iven = 0;
+
 
 /*************************************************/
 
@@ -1037,9 +1040,10 @@ void ciklus(){
 			konvoj_von_mostani_encoder_ertek = get_encoder_counter();
 			konvoj_von_hossz = (konvoj_von_kezdet_encoder_ertek - konvoj_von_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 
-			if(konvoj_von_hossz >= 8700)
+			if(konvoj_von_hossz >= 8700 && megtettuk_a_kort == 0)
 			{
 				megtettuk_a_kort = 1;
+				kormany_szabalyzas_on = 0;
 			}
 
 			if(!megtettuk_a_kort)
@@ -1052,9 +1056,25 @@ void ciklus(){
 				BT_UART_SendString("Megttt \r\n");
 				kormany_szabalyzas_on = 0;
 				set_gyari_motor_compare_value(6510);
-				set_compare_value_digit_szervo(30000);
+
+				if(konv_elso_iven){
+					set_compare_value_digit_szervo(27000);
+				}
 
 
+				if(konvoj_von_hossz >= 9100 && !konv_masodik_iven){
+					konv_elso_iven = 0;
+					set_compare_value_digit_szervo(39000);
+				}
+
+				if(konvoj_von_hossz >= 9600)
+				{
+					konv_masodik_iven = 1;
+					kormany_szabalyzas_on = 1;
+				}
+
+
+/*
 				if(!lejottunk_a_korrol)
 				{
 					if(vil_ledek_szama() == 0)
@@ -1074,8 +1094,8 @@ void ciklus(){
 				else {
 					kormany_szabalyzas_on = 1;
 					state_of_robot = JUST_GOING;
-			}
-
+				}
+*/
 			}
 
 			break;
@@ -1986,7 +2006,7 @@ void jelzes_felismeres(uint8_t vonal_szam){
 			hanyszor_volt_2_vonal++;
 		}
 
-		if(hanyszor_volt_2_vonal >= 2)
+		if(hanyszor_volt_2_vonal >= 4)
 		{
 			kettes_vonal_kezdete_encoder_ertek = get_encoder_counter();
 			kettes_vonal_van = 1;
