@@ -1273,7 +1273,7 @@ void ciklus(){
 			{
 				BT_UART_SendString("K J 1\r\n");
 			}
-			set_gyari_motor_compare_value(6520);
+			set_gyari_motor_compare_value(6540);
 
 			if(j1_most_kezd_merni)
 			{
@@ -1359,7 +1359,7 @@ void ciklus(){
 				BT_UART_SendString("K J 2\r\n");
 			}
 
-			set_gyari_motor_compare_value(6520);
+			set_gyari_motor_compare_value(6540);
 
 			if(kor_ford_most_kezd_merni)
 			{
@@ -1407,7 +1407,7 @@ void ciklus(){
 			}
 
 
-			set_gyari_motor_compare_value(6540);
+			set_gyari_motor_compare_value(6560);
 			if(kor_ford_most_kezd_merni)
 			{
 				kor_ford_most_kezd_merni = 0;
@@ -1454,7 +1454,7 @@ void ciklus(){
 			}
 
 
-			set_gyari_motor_compare_value(6520);
+			set_gyari_motor_compare_value(6540);
 
 
 
@@ -1505,7 +1505,7 @@ void ciklus(){
 				BT_UART_SendString("K B 2\r\n");
 			}
 
-			set_gyari_motor_compare_value(6510);
+			set_gyari_motor_compare_value(6540);
 
 			if(kor_ford_most_kezd_merni)
 			{
@@ -1553,7 +1553,7 @@ void ciklus(){
 				BT_UART_SendString("K B 3\r\n");
 			}
 
-			set_gyari_motor_compare_value(6540);
+			set_gyari_motor_compare_value(6560);
 
 			if(kor_ford_most_kezd_merni)
 			{
