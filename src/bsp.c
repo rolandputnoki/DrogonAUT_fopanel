@@ -25,7 +25,18 @@ extern uint16_t hatra_ido_milisec = 0;
 extern uint8_t varjuk_meg_a_kozep_erteket = 0;
 extern uint8_t megvartuk_a_kozepet = 0;
 extern uint8_t varjuk_meg_a_hatra_erteket = 0;
-extern uint8_t megvartuk_a_hatrat = 0;;
+extern uint8_t megvartuk_a_hatrat = 0;
+/***********************************/
+
+
+/***********************************/
+/* Fekezes */
+extern uint16_t fek_kozep_ido_milisec = 0;
+extern uint16_t fek_hatra_ido_milisec = 0;
+extern uint8_t fek_varjuk_meg_a_kozep_erteket = 0;
+extern uint8_t fek_varjuk_meg_a_hatra_erteket = 0;
+extern uint8_t fek_megvartuk_a_hatrat = 0;
+extern uint8_t fek_megvartuk_a_kozepet = 0;
 /***********************************/
 
 
@@ -223,6 +234,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 				hatra_ido_milisec = 0;
 			}
 		}
+
+		if(fek_varjuk_meg_a_kozep_erteket){
+			fek_kozep_ido_milisec++;
+			if(fek_megvartuk_a_kozepet){
+				fek_kozep_ido_milisec = 0;
+				fek_varjuk_meg_a_kozep_erteket = 0;
+			}
+		}
+
+		if(fek_varjuk_meg_a_hatra_erteket){
+			fek_hatra_ido_milisec++;
+			if(fek_megvartuk_a_hatrat){
+				fek_hatra_ido_milisec = 0;
+				fek_varjuk_meg_a_hatra_erteket = 0;
+			}
+		}
+
+
 
 		now_inc_value = get_encoder_counter();
 		inc_difference = -1*(now_inc_value - prev_inc_value);

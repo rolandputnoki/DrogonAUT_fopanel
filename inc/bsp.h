@@ -36,6 +36,7 @@ void sebesseg_szabalyzas();
 void jelzes_felismeres(uint8_t);
 void kereszt_vonal_felismeres(uint8_t);
 void konvoj_elhaladas_felismeres();
+uint8_t fekez();
 
 extern uint8_t new_cycle;
 
@@ -61,6 +62,7 @@ typedef enum {
 /****************************************************/
 
 	HORDO_KOVETKEZIK = 4,
+	HORDO_KORM_SZAB_KI = 52,
 
 
 /****************************************************/
@@ -188,6 +190,18 @@ uint8_t most_autot_merunk;
 uint8_t autot_erzekeltem;
 uint16_t varakozasi_ido;
 /**************************************************************/
+
+
+
+/***********************************/
+/* Fekezes */
+uint16_t fek_kozep_ido_milisec;
+uint16_t fek_hatra_ido_milisec;
+uint8_t fek_varjuk_meg_a_kozep_erteket;
+uint8_t fek_varjuk_meg_a_hatra_erteket;
+uint8_t fek_megvartuk_a_hatrat;
+uint8_t fek_megvartuk_a_kozepet;
+/***********************************/
 
 
 #endif /* BSP_H_ */
