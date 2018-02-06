@@ -341,6 +341,15 @@ uint8_t nulla_led_vilagitott_elobb = 0;
 uint8_t elobb_nulla_led_volt = 0;
 uint8_t hanyszor_volt_nulla = 0;
 uint8_t most_nulla = 0;
+
+
+uint8_t egy_vonal_volt_elobb = 0;
+uint8_t elobb_egy_vonal_volt = 0;
+uint8_t hanyszor_volt_egy_vonal = 0;
+uint8_t mar_egy_vonalon_voltunk = 0;
+
+
+uint8_t fekezni_kell = 0;
 /*************************************************/
 
 
@@ -1588,26 +1597,18 @@ void ciklus(){
 				BT_UART_SendString("VAS_ÁT jel\r\n");
 			}
 
-
+/*
 			if(v_a_jelezs_kezdet)
 			{
 				v_a_jelzes_kezdet_encoder = get_encoder_counter();
 				v_a_jelezs_kezdet = 0;
 				set_gyari_motor_compare_value(5800);
 			} else {
-
-/*********************************************************************/
-				/* Egyik gondolatom, hogy a jelzés után a megtett távolsággal arányosan csökken a sebesség
-				 * De egyenlõre kipróbáljuk, hogy csak lecsökkentem, és a keresztvonal után állok meg
-				 *
-				 *
-				 *
-				 * */
-
-/*********************************************************************/
 				v_a_jelzes_mostani_encoder = get_encoder_counter();
 				v_a_jelzes_utan_megtett_ut = (v_a_jelzes_kezdet_encoder - v_a_jelzes_mostani_encoder)*ENCODER_VALUE_TO_MM;
 			}
+*/
+/*
 			if(!megalltunk){
 				set_gyari_motor_compare_value(5800);
 				if(speed_of_drogon < 0.01f)
@@ -1637,6 +1638,41 @@ void ciklus(){
 				nulla_led_vilagitott_elobb = 0;
 				hanyszor_volt_nulla = 0;
 			}
+	*/
+
+			if(vil_ledek_szama() == 0){
+
+
+
+				if(!nulla_led_vilagitott_elobb){
+					nulla_led_vilagitott_elobb = 1;
+				} else {
+					hanyszor_volt_nulla++;
+				}
+
+				if(hanyszor_volt_nulla >= 10){
+
+					fekezni_kell = 1;
+
+				}
+
+			} else {
+				nulla_led_vilagitott_elobb = 0;
+				hanyszor_volt_nulla = 0;
+			}
+
+
+			if(fekezni_kell)
+			{
+				sebesseg_szabalyzas_elore_on = 0;
+				if(fekez())
+				{
+
+					state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR;
+					fekezni_kell = 0;
+				}
+			}
+
 			break;
 
 		case VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_ELOSZOR:
@@ -1644,9 +1680,6 @@ void ciklus(){
 			{
 				BT_UART_SendString("1. VÁR\r\n");
 			}
-
-
-			set_gyari_motor_compare_value(5600);
 			itoa(elulso_sharp_szenzor, buf10, 10);
 			BT_UART_SendString(buf10);
 			BT_UART_SendString("\r\n");
@@ -1671,19 +1704,90 @@ void ciklus(){
 				koztes_szak_kezdet_encoder = get_encoder_counter();
 			} else
 			{
+
+
+
 				koztes_szak_mostani_encoder = get_encoder_counter();
 				koztes_szak_hossz = (koztes_szak_kezdet_encoder - koztes_szak_mostani_encoder)*ENCODER_VALUE_TO_MM;
 
 				itoa(koztes_szak_hossz, buf10, 10);
 				BT_UART_SendString(buf10);
 				BT_UART_SendString("\r\n");
-				if(koztes_szak_hossz >= 1250){
-					set_gyari_motor_compare_value(5600);
+				if(koztes_szak_hossz >= 1500){
+
+					fekezni_kell = 1;
+/*
+			set_gyari_motor_compare_value(5600);
 					if(speed_of_drogon == 0.0f)
 					{
+
 						state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA;
 					}
+*/
 				}
+
+
+
+				/*
+		if(!mar_egy_vonalon_voltunk)
+		{
+			if(vonalak_szama() == 1){
+				if(!egy_vonal_volt_elobb){
+					egy_vonal_volt_elobb = 1;
+				} else {
+					hanyszor_volt_egy_vonal++;
+				}
+
+				if(hanyszor_volt_egy_vonal >= 10){
+					mar_egy_vonalon_voltunk = 1;
+				}
+
+			} else {
+				egy_vonal_volt_elobb = 0;
+				hanyszor_volt_egy_vonal = 0;
+			}
+		}
+		else
+		{
+			if(vil_ledek_szama() == 0){
+
+
+
+				if(!nulla_led_vilagitott_elobb){
+					nulla_led_vilagitott_elobb = 1;
+				} else {
+					hanyszor_volt_nulla++;
+				}
+
+				if(hanyszor_volt_nulla >= 10){
+
+					fekezni_kell = 1;
+
+				}
+
+			} else {
+				nulla_led_vilagitott_elobb = 0;
+				hanyszor_volt_nulla = 0;
+			}
+		}
+*/
+
+
+
+
+
+
+				if(fekezni_kell)
+				{
+					if(fekez())
+					{
+
+						state_of_robot = VASUTI_ATJARO_KONVOJ_ELHALADASRA_VAR_MASODJARA;
+						fekezni_kell = 0;
+					}
+				}
+
+
 			}
 			break;
 
@@ -1694,7 +1798,7 @@ void ciklus(){
 				BT_UART_SendString("2. VÁR\r\n");
 			}
 
-			set_gyari_motor_compare_value(5600);
+//			set_gyari_motor_compare_value(5600);
 
 
 			itoa((int)autot_erzekeltem, buf10, 10);
@@ -2953,16 +3057,16 @@ uint8_t fekez()
 				set_gyari_motor_compare_value(5800);
 			} else {
 
-				if(fek_hatra_ido_milisec >= 30){
+				if(fek_hatra_ido_milisec >= 50){
 					fek_varjuk_meg_a_kozep_erteket = 1;
 					set_gyari_motor_compare_value(6200);
 					fek_megvartuk_a_hatrat = 1;
 				}
 			}
 		} else {
-			if(fek_kozep_ido_milisec >= 30){
+			if(fek_kozep_ido_milisec >= 50){
 				fek_megvartuk_a_kozepet = 1;
-				set_gyari_motor_compare_value(5600);
+				set_gyari_motor_compare_value(4800);
 			}
 		}
 	} else {
@@ -2974,7 +3078,7 @@ uint8_t fekez()
 			lefekeztunk = 1;
 		} else
 		{
-			set_gyari_motor_compare_value(5600);
+			set_gyari_motor_compare_value(4800);
 		}
 
 	}
