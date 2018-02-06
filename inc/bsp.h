@@ -204,4 +204,12 @@ uint8_t fek_megvartuk_a_kozepet;
 /***********************************/
 
 
+
+/***********************************/
+/* Fekezes utáni várakozás*/
+uint16_t fek_varakozasi_ido;
+uint8_t varjunk_egy_kicsit;
+/***********************************/
+
+
 #endif /* BSP_H_ */

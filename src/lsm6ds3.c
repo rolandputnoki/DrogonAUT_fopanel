@@ -24,6 +24,57 @@ DrvStatusTypeDef LMS6DS3_Read_Acc(){
 int LSM6DS3_Init2(){
 	uint8_t pData;
 	uint8_t initData;
+	uint8_t DataToWrite;
+	uint8_t Data[2];
+
+	DataToWrite = 0xE4;
+
+	if(I2C_WriteRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, LSM6DS3_ACC_GYRO_CTRL8_XL, &DataToWrite, 1) == HAL_OK)
+	{
+		uint8_t ittvagyok = 0;
+	}
+	HAL_Delay(10);
+
+
+	DataToWrite = 0x10;
+
+	if(I2C_WriteRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, LSM6DS3_ACC_GYRO_TAP_CFG1, &DataToWrite, 1) == HAL_OK)
+	{
+		uint8_t ittvagyok = 0;
+	}
+	HAL_Delay(10);
+
+
+	DataToWrite = 0x80;
+
+	if(I2C_WriteRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, 	LSM6DS3_ACC_GYRO_CTRL4_C, &DataToWrite, 1) == HAL_OK)
+	{
+		uint8_t ittvagyok = 0;
+	}
+	HAL_Delay(10);
+
+
+	DataToWrite = 0x53;
+
+	if(I2C_WriteRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, 	LSM6DS3_ACC_GYRO_CTRL1_XL, &DataToWrite, 1) == HAL_OK)
+	{
+		uint8_t ittvagyok = 0;
+	}
+	HAL_Delay(10);
+
+
+	DataToWrite = 0x50;
+
+	if(I2C_WriteRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, 	LSM6DS3_ACC_GYRO_CTRL2_G, &DataToWrite, 1) == HAL_OK)
+	{
+		uint8_t ittvagyok = 0;
+	}
+	HAL_Delay(10);
+
+
+
+
+/*
 	int res;
 	if(I2C_ReadRegister(LSM6DS3_ACC_GYRO_I2C_ADDRESS_LOW, LSM6DS3_ACC_GYRO_WHO_AM_I_REG, &pData,1 ) == HAL_OK){
 		if(pData == 0x69){
@@ -33,6 +84,12 @@ int LSM6DS3_Init2(){
 			return 0;
 		}
 	}
+
+*/
+
+
+
+
 	return 1;
 }
 
@@ -57,9 +114,9 @@ int LMS6DS3_Read_Axes(int32_t *x_axis, int32_t *y_axis, int32_t *z_axis){
 
 
 	/* Calculate the data. */
-	*x_axis = ( int32_t )( pData[0] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_4G );
-	*y_axis = ( int32_t )( pData[1] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_4G );
-	*z_axis = ( int32_t )( pData[2] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_4G );
+	*x_axis = ( int32_t )( pData[0] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_2G );
+	*y_axis = ( int32_t )( pData[1] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_2G );
+	*z_axis = ( int32_t )( pData[2] * LSM6DS3_ACC_SENSITIVITY_FOR_FS_2G );
 
 	return 0;
 }

@@ -40,6 +40,13 @@ extern uint8_t fek_megvartuk_a_kozepet = 0;
 /***********************************/
 
 
+/***********************************/
+/* Fekezes utáni várakozás*/
+extern uint16_t fek_varakozasi_ido = 0;
+extern uint8_t varjunk_egy_kicsit = 0;
+/***********************************/
+
+
 /**************************************************************/
 /* Konvoj elhaladás felismerés segédváltozók  */
 /* Konvoj elhaladásának méréséhez */
@@ -249,6 +256,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 				fek_hatra_ido_milisec = 0;
 				fek_varjuk_meg_a_hatra_erteket = 0;
 			}
+		}
+
+
+		if(varjunk_egy_kicsit)
+		{
+			fek_varakozasi_ido++;
 		}
 
 

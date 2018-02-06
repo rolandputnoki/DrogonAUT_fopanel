@@ -107,6 +107,8 @@ float speed_diff = 0;
 
 int32_t x_acc,y_acc,z_acc;
 
+int32_t x,y,z;
+
 int main()
 {
 
@@ -140,6 +142,7 @@ int main()
 
 */
 
+//		LMS6DS3_Read_Axes_with_correction(&x,&y, &z);
 
 
 		if(new_cycle)
@@ -199,7 +202,7 @@ int main()
 				BT_UART_SendString(buffer);
 				BT_UART_SendString("\r\n");
 			}
-			*/
+*/
 		}
 
 	}
@@ -428,6 +431,10 @@ int32_t hordo_jel_utan_tav_mostani_encoder_ertek = 0;
 uint8_t hordo_jel_utan_elso_meres = 1;
 int32_t hordo_jel_utan_tav_hossz = 0;
 
+uint8_t atertunk_a_hordon = 0;
+uint8_t forgas_irany_megallapitas = 1;
+uint8_t forgas_irany_jobb = 0;
+uint8_t forgas_irany_bal = 0;
 
 
 /*************************************************/
@@ -1860,7 +1867,7 @@ void ciklus(){
 				hordo_jel_utan_tav_hossz = (hordo_jel_utan_tav_kezdet_encoder_ertek - hordo_jel_utan_tav_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 			}
 
-			if(hordo_jel_utan_tav_hossz >= 200)
+			if(hordo_jel_utan_tav_hossz >= 1400)
 			{
 
 				state_of_robot = HORDO_KORM_SZAB_KI;
@@ -1871,7 +1878,7 @@ void ciklus(){
 			BT_UART_SendString("\r\n");
 
 
-			set_gyari_motor_compare_value(6600);
+			set_gyari_motor_compare_value(7000);
 			sebesseg_szabalyzas_elore_on = 0;
 			break;
 
@@ -1881,27 +1888,123 @@ void ciklus(){
 
 			if(teszt_helyzet)
 			{
-				BT_UART_SendString("HORDÓ KORM KI\r\n");
+//				BT_UART_SendString("HORDÓ KORM KI\r\n");
 			}
 
 			hordo_jel_utan_tav_mostani_encoder_ertek = get_encoder_counter();
 			hordo_jel_utan_tav_hossz = (hordo_jel_utan_tav_kezdet_encoder_ertek - hordo_jel_utan_tav_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
 			itoa((int)hordo_jel_utan_tav_hossz, buf10, 10);
-			BT_UART_SendString(buf10);
-			BT_UART_SendString("\r\n");
-			if(fekez())
-			{
-				BT_UART_SendString("FEK_OKE\r\n");
-//				set_gyari_motor_compare_value(6200);
-			}
-//			set_gyari_motor_compare_value(5800);
-/*
-			kormany_szabalyzas_on = 0;
-			LMS6DS3_Read_Axes_with_correction(&x_acc, &y_acc, &z_acc);
+//			BT_UART_SendString(buf10);
+//			BT_UART_SendString("\r\n");
 
-			szervo_value = DIGIT_SZ_KOZEP + (uint16_t)(x_acc*30);
-			set_compare_value_digit_szervo(szervo_value);
-*/
+
+
+
+
+
+			if(hordo_jel_utan_tav_hossz >= 2850)
+			{
+				fekezni_kell = 1;
+				kormany_szabalyzas_on = 1;
+			} else {
+
+
+				if(forgas_irany_megallapitas)
+				{
+					if(x_acc <= -150)
+					{
+						forgas_irany_jobb = 1;
+						forgas_irany_megallapitas = 0;
+					} else if(x_acc >= 150)
+					{
+						forgas_irany_bal = 1;
+						forgas_irany_megallapitas = 0;
+					}
+				}
+
+
+
+				if(!atertunk_a_hordon)
+				{
+					kormany_szabalyzas_on = 0;
+					LMS6DS3_Read_Axes_with_correction(&x_acc, &y_acc, &z_acc);
+
+
+					if(x_acc <0)
+					{
+						szervo_value = DIGIT_SZ_KOZEP + (uint16_t)(x_acc*50);
+					} else
+					{
+						szervo_value = DIGIT_SZ_KOZEP + (uint16_t)(x_acc*100);
+					}
+
+					set_compare_value_digit_szervo(szervo_value);
+
+					itoa(x_acc,buf10, 10);
+					BT_UART_SendString(buf10);
+					BT_UART_SendString("     ");
+					itoa(y_acc,buf10, 10);
+					BT_UART_SendString(buf10);
+					BT_UART_SendString("     ");
+					itoa(z_acc,buf10, 10);
+					BT_UART_SendString(buf10);
+
+
+					BT_UART_SendString("\r\n");
+				} else
+				{
+
+					BT_UART_SendString("Át a H\r\n");
+					if(forgas_irany_jobb)
+					{
+						set_compare_value_digit_szervo(40000);
+					}
+
+					if(forgas_irany_bal)
+					{
+						set_compare_value_digit_szervo(26000);
+					}
+				}
+
+			}
+
+
+			if(hordo_jel_utan_tav_hossz >= 2550)
+			{
+				if(!atertunk_a_hordon)
+				{
+					atertunk_a_hordon = 1;
+				}
+			}
+
+			if(fekezni_kell)
+			{
+				if(fekez())
+				{
+					BT_UART_SendString("FEK_OKE\r\n");
+	//				set_gyari_motor_compare_value(6200);
+
+					if(!varjunk_egy_kicsit)
+					{
+						varjunk_egy_kicsit = 1;
+					} else
+					{
+						if(fek_varakozasi_ido >= 2000)
+						{
+							varjunk_egy_kicsit = 0;
+							state_of_robot = JUST_GOING;
+						}
+					}
+
+				}
+			}
+
+
+
+//			set_gyari_motor_compare_value(5800);
+
+
+
 			break;
 
 
@@ -1925,6 +2028,8 @@ void ciklus(){
 
 		case JUST_GOING:
 
+			sebesseg_szabalyzas_elore_on = 1;
+			kormany_szabalyzas_on = 1;
 			wanted_speed = 0.6f;
 			if(teszt_helyzet){
 				BT_UART_SendString("CSILL\r\n");
