@@ -114,8 +114,8 @@ void init_all(){
 
 	/* Bluetooth bekapcsolása */
 	/* AutoReconnect engedélyezve van, így rögtön csatlakozik */
-	BT_init_pins();
-	BT_UART_Init();
+//	BT_init_pins();
+//	BT_UART_Init();
 
 	//Sharp szenzorok méréséhez az ADC csatornák inicializációja
 	ADC_Init();
@@ -139,7 +139,7 @@ void init_all(){
 
 	Set_LMS6DS3_correction_values();
 
-
+	init_duda_pin();
 	init_dip_kapcsolo();
 }
 
@@ -346,6 +346,22 @@ void init_pin_to_analyser(){
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_RESET);
 
+}
+
+
+void init_duda_pin()
+{
+	__GPIOB_CLK_ENABLE();
+
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+	// Configure pin in output push/pull mode
+	GPIO_InitStructure.Pin = GPIO_PIN_13;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+	GPIO_InitStructure.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
 }
 
 void init_user_button(void)
