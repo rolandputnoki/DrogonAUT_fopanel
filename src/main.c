@@ -439,6 +439,10 @@ uint8_t forgas_irany_bal = 0;
 
 
 /*************************************************/
+
+uint8_t drone_fekezni_kell = 0;
+
+
 void ciklus(){
 
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_12);
@@ -606,16 +610,34 @@ void ciklus(){
 				BT_UART_SendString("DRONE köv\r\n");
 			}
 
-			wanted_speed = (elulso_sharp_szenzor - 450)*0.00057f;
+			wanted_speed = (elulso_sharp_szenzor - 530)*0.00062f;
 			if(elulso_sharp_szenzor <= 600){
 				wanted_speed = 0.0f;
-//					sebesseg_szabalyzas_elore_on = 0;
-//					set_gyari_motor_compare_value(00);
 					state_of_robot = DRONE_ELOTT_ALLUNK;
 			}
+
+
+			/*
+			sebesseg_szabalyzas_elore_on = 0;
+
+			if(elulso_sharp_szenzor <= 600)
+			{
+				drone_fekezni_kell = 1;
+			}
+
+			if(drone_fekezni_kell)
+			{
+				if(fekez())
+				{
+					state_of_robot = DRONE_ELOTT_ALLUNK;
+				}
+			}
+*/
+
 			break;
 
 		case DRONE_ELOTT_ALLUNK:
+
 
 			if(teszt_helyzet) {
 				BT_UART_SendString("DRONE all\r\n");
@@ -637,7 +659,7 @@ void ciklus(){
 
 			start_milisec_szamlalo = 1;
 			if(milisec_szamlalo > 2100){
-//				sebesseg_szabalyzas_elore_on = 1;
+				sebesseg_szabalyzas_elore_on = 1;
 				mar_meg_volt_a_drone = 1;
 				state_of_robot = JUST_GOING;
 			}
@@ -1113,6 +1135,7 @@ void ciklus(){
 				{
 					konv_masodik_iven = 1;
 					kormany_szabalyzas_on = 1;
+					state_of_robot = JUST_GOING;
 				}
 			}
 
@@ -1259,6 +1282,7 @@ void ciklus(){
 				{
 					konv_masodik_iven = 1;
 					kormany_szabalyzas_on = 1;
+					state_of_robot = JUST_GOING;
 				}
 			}
 
