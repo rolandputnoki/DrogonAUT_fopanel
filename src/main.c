@@ -1494,7 +1494,7 @@ void ciklus(){
 			}
 
 
-			set_gyari_motor_compare_value(6560);
+			set_gyari_motor_compare_value(6540);
 			if(kor_ford_most_kezd_merni)
 			{
 				kor_ford_most_kezd_merni = 0;
