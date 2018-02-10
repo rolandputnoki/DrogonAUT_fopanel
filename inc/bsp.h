@@ -29,6 +29,7 @@ extern TIM_HandleTypeDef Tim7Handle;
 
 uint8_t vonalak_szama();
 uint8_t vil_ledek_szama();
+uint8_t vil_ledek_szama_hatso();
 uint8_t csikok_szama(uint32_t);
 void korforgalom_jelzes_felismeres();
 void fal_felismeres();
@@ -179,7 +180,15 @@ uint8_t megvartuk_a_hatrat;
 uint8_t megvartuk_a_kozepet;
 /***********************************/
 
-
+/***********************************/
+/* Cel tolatas */
+uint16_t cel_kozep_ido_milisec;
+uint16_t cel_hatra_ido_milisec;
+uint8_t cel_varjuk_meg_a_kozep_erteket;
+uint8_t cel_megvartuk_a_kozepet;
+uint8_t cel_varjuk_meg_a_hatra_erteket;
+uint8_t cel_megvartuk_a_hatrat;
+/***********************************/
 
 /**************************************************************/
 /* Konvoj elhaladás felismerés segédváltozók  */

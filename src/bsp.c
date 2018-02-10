@@ -30,6 +30,17 @@ extern uint8_t megvartuk_a_hatrat = 0;
 
 
 /***********************************/
+/* Cel tolatas */
+extern uint16_t cel_kozep_ido_milisec = 0;
+extern uint16_t cel_hatra_ido_milisec = 0;
+extern uint8_t cel_varjuk_meg_a_kozep_erteket = 0;
+extern uint8_t cel_megvartuk_a_kozepet = 0;
+extern uint8_t cel_varjuk_meg_a_hatra_erteket = 0;
+extern uint8_t cel_megvartuk_a_hatrat = 0;
+/***********************************/
+
+
+/***********************************/
 /* Fekezes */
 extern uint16_t fek_kozep_ido_milisec = 0;
 extern uint16_t fek_hatra_ido_milisec = 0;
@@ -232,6 +243,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *handle)
 			if(megvartuk_a_kozepet){
 				kozep_ido_milisec = 0;
 				varjuk_meg_a_kozep_erteket = 0;
+			}
+		}
+
+		if(cel_varjuk_meg_a_hatra_erteket){
+			cel_hatra_ido_milisec++;
+			if(cel_megvartuk_a_hatrat){
+				cel_hatra_ido_milisec = 0;
+			}
+		}
+
+
+		if(cel_varjuk_meg_a_kozep_erteket){
+			cel_kozep_ido_milisec++;
+			if(cel_megvartuk_a_kozepet){
+				cel_kozep_ido_milisec = 0;
+				cel_varjuk_meg_a_kozep_erteket = 0;
 			}
 		}
 

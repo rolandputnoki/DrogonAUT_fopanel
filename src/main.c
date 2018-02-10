@@ -441,7 +441,7 @@ uint8_t forgas_irany_bal = 0;
 /*************************************************/
 
 uint8_t drone_fekezni_kell = 0;
-
+uint8_t cel_tolatni_kell = 0;
 
 void ciklus(){
 
@@ -2136,9 +2136,30 @@ void ciklus(){
 			{
 				BT_UART_SendString("GYOZELEM\r\n");
 			}
+
+			sebesseg_szabalyzas_elore_on = 0;
+
 			if(fekez())
 			{
+
 			}
+
+/*
+			if(!cel_tolatni_kell)
+			{
+				if(fekez())
+				{
+					if(vil_ledek_szama_hatso() == 0)
+					{
+						cel_tolatni_kell = 1;
+					}
+				}
+			} else
+			{
+
+			}
+
+*/
 
 
 			break;
@@ -2261,6 +2282,19 @@ uint8_t vil_ledek_szama()
 	for(m = 0; m < 32; m++)
 	{
 		if(adcAdatok_elso[m] != 0){
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+uint8_t vil_ledek_szama_hatso()
+{
+	uint8_t cnt = 0;
+	uint8_t m = 0;
+	for(m = 0; m < 32; m++)
+	{
+		if(adcAdatok_hatso[m] != 0){
 			cnt++;
 		}
 	}
