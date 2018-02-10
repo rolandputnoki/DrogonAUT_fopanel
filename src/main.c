@@ -949,7 +949,7 @@ void ciklus(){
 			} else {
 				utca_sarok_tolatas_utani_mostani_encoder_ertek = get_encoder_counter();
 				utca_sarok_utani_eloremenet_hossza = (utca_sarok_tolatas_utani_encoder_ertek - utca_sarok_tolatas_utani_mostani_encoder_ertek)*ENCODER_VALUE_TO_MM;
-				if(utca_sarok_utani_eloremenet_hossza >= 600){
+				if(utca_sarok_utani_eloremenet_hossza >= 1500){
 					state_of_robot = JUST_GOING;
 				}
 			}
